@@ -70,16 +70,19 @@ export function Hunter() {
       shared.coverage,
       shared.nearestSurfaceColor,
     );
-    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
+    // Firing a Reveal Emote breaks your cover for its window (same risk as a taunt).
+    const detectable =
+      camo < CAMO_SAFE_THRESHOLD || shared.taunting || shared.emoteReveal > 0;
     const watched = inCone && detectable;
 
     setWatched(watched);
 
     // --- suspicion ---
     if (watched) {
-      const mismatch = shared.taunting
-        ? 1
-        : Math.max(0.15, (CAMO_SAFE_THRESHOLD - camo) / CAMO_SAFE_THRESHOLD);
+      const mismatch =
+        shared.taunting || shared.emoteReveal > 0
+          ? 1
+          : Math.max(0.15, (CAMO_SAFE_THRESHOLD - camo) / CAMO_SAFE_THRESHOLD);
       suspicion.current = Math.min(
         1,
         suspicion.current + (mismatch * dt) / HUNTER_SUSPICION_TO_TAG,

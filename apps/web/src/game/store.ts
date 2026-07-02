@@ -3,6 +3,7 @@
 // scene components, NOT here — the store only holds discrete/UI-facing state.
 import { create } from "zustand";
 import type { GamePhase, RoundOutcome, Stamp } from "./types";
+import type { EmoteId } from "./emote";
 import { PAINT_BUDGET, PALETTE, PREP_SECONDS } from "./constants";
 
 interface GameState {
@@ -21,8 +22,14 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Reveal Emotes: the cosmetic the player has equipped (pure prestige). */
+  equippedEmote: EmoteId;
+  /** Whether this life's single Reveal Emote has been spent. */
+  emoteUsed: boolean;
 
   // ---- actions ----
+  setEquippedEmote: (e: EmoteId) => void;
+  setEmoteUsed: (u: boolean) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +59,11 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  equippedEmote: "peel",
+  emoteUsed: false,
+
+  setEquippedEmote: (e) => set({ equippedEmote: e }),
+  setEmoteUsed: (u) => set({ emoteUsed: u }),
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +76,7 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      emoteUsed: false,
     });
   },
 

@@ -143,6 +143,46 @@ export function win() {
   });
 }
 
+/** Flashy sting when a Reveal Emote fires (varies a touch by emote). */
+export function emoteSting(id: "peel" | "melt" | "confetti") {
+  const c = ac();
+  if (!c) return;
+  if (id === "confetti") {
+    [659, 880, 1319].forEach((f, i) => {
+      const o = c.createOscillator();
+      o.type = "square";
+      o.frequency.value = f;
+      const g = env(o, 0.2, 0.005, 0.22);
+      if (g) {
+        o.start(c.currentTime + i * 0.06);
+        o.stop(c.currentTime + i * 0.06 + 0.26);
+      }
+    });
+  } else if (id === "melt") {
+    const o = c.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(700, c.currentTime);
+    o.frequency.exponentialRampToValueAtTime(180, c.currentTime + 0.5);
+    o.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.9);
+    env(o, 0.3, 0.02, 0.9);
+    o.start();
+    o.stop(c.currentTime + 1);
+  } else {
+    // peel — a zippy upward rip
+    const src = c.createBufferSource();
+    src.buffer = noiseBuffer(c, 0.4);
+    const bp = c.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(500, c.currentTime);
+    bp.frequency.exponentialRampToValueAtTime(3000, c.currentTime + 0.35);
+    bp.Q.value = 2;
+    src.connect(bp);
+    env(bp, 0.22, 0.01, 0.36);
+    src.start();
+    src.stop(c.currentTime + 0.41);
+  }
+}
+
 /** Soft UI click. */
 export function click() {
   const c = ac();

@@ -5,6 +5,7 @@ import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
 import * as sfx from "./sound";
+import { EMOTES, getEmote, EMOTE_DURATION } from "./emote";
 import {
   PALETTE,
   PAINT_BUDGET,
@@ -169,6 +170,68 @@ function TauntButton() {
   );
 }
 
+function EmotePicker() {
+  const equipped = useGame((s) => s.equippedEmote);
+  const setEquipped = useGame((s) => s.setEquippedEmote);
+  return (
+    <div style={styles.emotePicker}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: "#333", marginBottom: 6 }}>
+        REVEAL EMOTE — cosmetic break-cover flourish
+      </div>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+        {EMOTES.map((e) => {
+          const on = equipped === e.id;
+          return (
+            <button
+              key={e.id}
+              title={e.blurb}
+              onClick={() => {
+                sfx.click();
+                setEquipped(e.id);
+              }}
+              style={{
+                ...styles.emoteChip,
+                background: on ? e.color : "#f2eef8",
+                color: on ? "#191225" : "#4a3a6a",
+                borderColor: on ? "#191225" : "#e0d8ef",
+              }}
+            >
+              <span style={{ fontSize: 18 }}>{e.emoji}</span>
+              <span style={{ fontSize: 10, fontWeight: 800 }}>{e.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EmoteButton() {
+  const equipped = useGame((s) => s.equippedEmote);
+  const used = useGame((s) => s.emoteUsed);
+  const setUsed = useGame((s) => s.setEmoteUsed);
+  const emote = getEmote(equipped);
+  const fire = () => {
+    if (used) return;
+    setUsed(true);
+    shared.emote.active = true;
+    shared.emote.id = equipped;
+    shared.emote.t = 0;
+    shared.emoteReveal = EMOTE_DURATION;
+    sfx.emoteSting(equipped);
+  };
+  return (
+    <button
+      onClick={fire}
+      disabled={used}
+      title={emote.blurb}
+      style={{ ...styles.emoteBtn, opacity: used ? 0.4 : 1, background: used ? "#bbb" : emote.color }}
+    >
+      {emote.emoji} {used ? "EMOTE USED" : "BREAK COVER"}
+    </button>
+  );
+}
+
 export function HUD() {
   const phase = useGame((s) => s.phase);
   const timeLeft = useGame((s) => s.timeLeft);
@@ -221,7 +284,9 @@ export function HUD() {
             <li><b>🎯 sample</b> a prop&apos;s exact color, then paint to match it</li>
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
+            <li>✨ <b>Break cover</b> with a Reveal Emote — once per life, pure flair</li>
           </ul>
+          <EmotePicker />
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
       </div>
@@ -290,9 +355,12 @@ export function HUD() {
 
       {!isPrep && (
         <div style={styles.bottomCenter}>
-          <TauntButton />
+          <div style={{ display: "flex", gap: 10 }}>
+            <TauntButton />
+            <EmoteButton />
+          </div>
           <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
-            Taunt to bait the Hunter — risky!
+            Taunt to bait — or Break Cover with your emote (once per life)
           </div>
         </div>
       )}
@@ -412,6 +480,19 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
+  emoteBtn: {
+    padding: "16px 24px",
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#191225",
+    border: "none",
+    borderRadius: 16,
+    cursor: "pointer",
+    boxShadow: "0 5px 0 #0003",
+    fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  emotePicker: { margin: "14px 0 2px", background: "#faf8ff", border: "1px solid #ece5fb", borderRadius: 14, padding: "10px 12px" },
+  emoteChip: { display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 10px", border: "2px solid", borderRadius: 10, cursor: "pointer", minWidth: 74, transition: "all 0.12s" },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },
   statNum: { fontSize: 32, fontWeight: 800, color: "#191225", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-baloo), system-ui, sans-serif" },

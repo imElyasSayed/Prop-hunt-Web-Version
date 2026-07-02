@@ -15,6 +15,14 @@ export const shared = {
   nearestSurfaceColor: "#cfc9bd",
   /** True once the player has requested to end prep early / start moving. */
   taunting: false,
+  /** Reveal Emote flourish state (for the VFX + break-cover reveal). */
+  emote: {
+    active: false,
+    id: "peel" as import("./emote").EmoteId,
+    t: 0,
+  },
+  /** Seconds an emote is currently breaking your cover (reads detectable). */
+  emoteReveal: 0,
 };
 
 export function resetShared() {
@@ -25,4 +33,7 @@ export function resetShared() {
   shared.coverage = 0;
   shared.nearestSurfaceColor = "#cfc9bd";
   shared.taunting = false;
+  shared.emote.active = false;
+  shared.emote.t = 0;
+  shared.emoteReveal = 0;
 }
