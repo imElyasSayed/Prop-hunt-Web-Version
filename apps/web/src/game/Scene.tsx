@@ -34,7 +34,7 @@ function GameClock() {
     const d = Math.min(dt, 0.05);
     tick(d);
     const s = useGame.getState();
-    if (s.phase === "hunt" && s.survivedFor >= HUNT_SECONDS) {
+    if (s.phase === "hunt" && s.survivedFor >= HUNT_SECONDS && s.mode !== "practice") {
       survive();
     }
   });

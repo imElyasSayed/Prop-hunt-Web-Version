@@ -140,8 +140,12 @@ export function Hunter() {
     shared.hunterPos.copy(pos);
     shared.hunterDir.copy(dir.current);
 
-    // --- tag ---
-    if (suspicion.current >= 1 && dist < HUNTER_TAG_RANGE) {
+    // --- tag --- (the scout is non-lethal in the tutorial and practice range)
+    if (
+      suspicion.current >= 1 &&
+      dist < HUNTER_TAG_RANGE &&
+      useGame.getState().mode === "normal"
+    ) {
       splat();
     }
   });

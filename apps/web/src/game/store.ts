@@ -21,8 +21,15 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Play mode: a normal round, the First Blob tutorial, or the Practice Range. */
+  mode: "normal" | "tutorial" | "practice";
 
   // ---- actions ----
+  setMode: (m: GameState["mode"]) => void;
+  startTutorial: () => void;
+  startPractice: () => void;
+  resetPaint: () => void;
+  backToPrep: () => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +59,28 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  mode: "normal",
+
+  setMode: (m) => set({ mode: m }),
+
+  startTutorial: () => {
+    set({ mode: "tutorial" });
+    get().startPrep();
+  },
+
+  startPractice: () => {
+    set({ mode: "practice" });
+    get().startPrep();
+    // freeze the prep timer so the sandbox never auto-advances
+    set({ timeLeft: 999 });
+  },
+
+  resetPaint: () => {
+    seqCounter = 0;
+    set({ stamps: [], paintLeft: PAINT_BUDGET, camoScore: 0 });
+  },
+
+  backToPrep: () => set({ phase: "prep", timeLeft: 999, outcome: null }),
 
   startPrep: () => {
     seqCounter = 0;
@@ -75,6 +104,8 @@ export const useGame = create<GameState>((set, get) => ({
 
   tick: (dt) => {
     const s = get();
+    // Practice Range: no timers, no forced phase changes — a free sandbox.
+    if (s.mode === "practice") return;
     if (s.phase === "prep") {
       const t = s.timeLeft - dt;
       if (t <= 0) {
@@ -90,7 +121,8 @@ export const useGame = create<GameState>((set, get) => ({
 
   addStamp: (u, v) => {
     const s = get();
-    if (s.phase !== "prep") return; // no undo AND no repaint mid-hunt in base game
+    // Normal/tutorial: paint only in prep. Practice: repaint freely, any phase.
+    if (s.phase !== "prep" && s.mode !== "practice") return;
     if (s.paintLeft <= 0) return;
     const stamp: Stamp = {
       u,
@@ -123,5 +155,5 @@ export const useGame = create<GameState>((set, get) => ({
     set({ phase: "result", outcome: "survived" });
   },
 
-  reset: () => set({ phase: "menu", outcome: null }),
+  reset: () => set({ phase: "menu", outcome: null, mode: "normal" }),
 }));

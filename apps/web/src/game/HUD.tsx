@@ -5,6 +5,8 @@ import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
 import * as sfx from "./sound";
+import { TutorialOverlay } from "./TutorialOverlay";
+import { PracticeOverlay } from "./PracticeOverlay";
 import {
   PALETTE,
   PAINT_BUDGET,
@@ -175,8 +177,11 @@ export function HUD() {
   const survivedFor = useGame((s) => s.survivedFor);
   const outcome = useGame((s) => s.outcome);
   const beingWatched = useGame((s) => s.beingWatched);
+  const mode = useGame((s) => s.mode);
   const startPrep = useGame((s) => s.startPrep);
   const beginHunt = useGame((s) => s.beginHunt);
+  const startTutorial = useGame((s) => s.startTutorial);
+  const startPractice = useGame((s) => s.startPractice);
   const prevWatched = useRef(false);
 
   const start = () => {
@@ -223,6 +228,32 @@ export function HUD() {
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
           </ul>
           <button style={styles.play} onClick={start}>PLAY ▶</button>
+          <div style={styles.menuRow}>
+            <button
+              style={styles.menuBtn}
+              onClick={() => {
+                sfx.initAudio();
+                sfx.click();
+                resetShared();
+                startTutorial();
+              }}
+            >
+              🐣 FIRST BLOB
+              <span style={styles.menuSub}>guided tutorial</span>
+            </button>
+            <button
+              style={styles.menuBtn}
+              onClick={() => {
+                sfx.initAudio();
+                sfx.click();
+                resetShared();
+                startPractice();
+              }}
+            >
+              🎯 PRACTICE
+              <span style={styles.menuSub}>free sandbox</span>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -273,6 +304,9 @@ export function HUD() {
           )}
         </div>
       </div>
+
+      {mode === "tutorial" && <TutorialOverlay />}
+      {mode === "practice" && <PracticeOverlay />}
 
       <div style={styles.bottomLeft}>
         <CamoMeter />
@@ -337,6 +371,23 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
     letterSpacing: 0.5,
   },
+  menuRow: { display: "flex", gap: 10, marginTop: 12, justifyContent: "center" },
+  menuBtn: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 1,
+    padding: "9px 16px",
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#191225",
+    background: "#f2eef8",
+    border: "2px solid #e0d8ef",
+    borderRadius: 12,
+    cursor: "pointer",
+    fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  menuSub: { fontSize: 10, fontWeight: 700, opacity: 0.55, letterSpacing: 0.3 },
   topBar: {
     position: "absolute",
     top: 0,
