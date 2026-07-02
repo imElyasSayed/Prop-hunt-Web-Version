@@ -5,6 +5,7 @@ import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
 import * as sfx from "./sound";
+import { TrophyCard, type TrophyData } from "./TrophyCard";
 import {
   PALETTE,
   PAINT_BUDGET,
@@ -174,6 +175,7 @@ export function HUD() {
   const timeLeft = useGame((s) => s.timeLeft);
   const survivedFor = useGame((s) => s.survivedFor);
   const outcome = useGame((s) => s.outcome);
+  const tell = useGame((s) => s.tell);
   const beingWatched = useGame((s) => s.beingWatched);
   const startPrep = useGame((s) => s.startPrep);
   const beginHunt = useGame((s) => s.beginHunt);
@@ -230,28 +232,27 @@ export function HUD() {
 
   if (phase === "result") {
     const survived = outcome === "survived";
+    const st = useGame.getState();
+    const data: TrophyData = {
+      outcome: survived ? "survived" : "splatted",
+      survivedFor,
+      camoPct: Math.round(st.camoScore * 100),
+      stamps: st.stamps,
+      surfaceColor: tell?.surfaceColor ?? st.surfaceColor,
+      tell,
+    };
     return (
       <div style={styles.center}>
-        <div style={{ ...styles.card, borderColor: survived ? "#2fce6a" : "#ff5b5b" }}>
-          <h1 style={{ ...styles.logo, fontSize: 40 }}>
-            {survived ? "SURVIVED 🎉" : "SPLATTED"}
-          </h1>
-          <p style={styles.tag}>
+        <div style={{ ...styles.resultCard, borderColor: survived ? "#2fce6a" : "#ff5b5b" }}>
+          <p style={{ ...styles.tag, margin: "0 0 12px" }}>
             {survived
-              ? "You blended perfectly. You win the Splotch Pot."
-              : `The Hunter found you at ${fmt(survivedFor)}.`}
+              ? "You blended perfectly. Share your Trophy 👇"
+              : `The Hunter found you at ${fmt(survivedFor)}. Here's the tell 👇`}
           </p>
-          <div style={styles.statRow}>
-            <div style={styles.stat}>
-              <div style={styles.statNum}>{fmt(survivedFor)}</div>
-              <div style={styles.statLbl}>survived</div>
-            </div>
-            <div style={styles.stat}>
-              <div style={styles.statNum}>{Math.round(useGame.getState().camoScore * 100)}%</div>
-              <div style={styles.statLbl}>final camo</div>
-            </div>
-          </div>
-          <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
+          <TrophyCard data={data} />
+          <button style={{ ...styles.play, marginTop: 18 }} onClick={start}>
+            PLAY AGAIN ▶
+          </button>
         </div>
       </div>
     );
@@ -315,6 +316,17 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 24,
     padding: "32px 36px",
     maxWidth: 460,
+    textAlign: "center",
+    boxShadow: "0 20px 60px #0003",
+    border: "3px solid #eee",
+  },
+  resultCard: {
+    background: "#fff",
+    borderRadius: 24,
+    padding: "20px 24px 24px",
+    maxWidth: 400,
+    maxHeight: "92vh",
+    overflowY: "auto",
     textAlign: "center",
     boxShadow: "0 20px 60px #0003",
     border: "3px solid #eee",

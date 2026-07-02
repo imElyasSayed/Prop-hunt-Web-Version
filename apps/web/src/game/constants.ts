@@ -13,6 +13,9 @@ export const PALETTE = [
   "#191225", // splat black
 ] as const;
 
+// ---- Map / Canvas ----
+export const MAP_NAME = "The Studio";
+
 // ---- Round timing (seconds) ----
 export const PREP_SECONDS = 35;
 export const HUNT_SECONDS = 95;

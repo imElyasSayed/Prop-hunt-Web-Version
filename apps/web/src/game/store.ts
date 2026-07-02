@@ -2,8 +2,10 @@
 // Per-frame transforms (player/hunter positions) live in refs inside the
 // scene components, NOT here — the store only holds discrete/UI-facing state.
 import { create } from "zustand";
-import type { GamePhase, RoundOutcome, Stamp } from "./types";
+import type { GamePhase, RoundOutcome, Stamp, Tell } from "./types";
 import { PAINT_BUDGET, PALETTE, PREP_SECONDS } from "./constants";
+import { shared } from "./shared";
+import { buildTell } from "./tell";
 
 interface GameState {
   phase: GamePhase;
@@ -21,6 +23,8 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** The Answer-Check readout for the round result (null until the round ends). */
+  tell: Tell | null;
 
   // ---- actions ----
   startPrep: () => void;
@@ -52,6 +56,7 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  tell: null,
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +69,7 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      tell: null,
     });
   },
 
@@ -114,13 +120,29 @@ export const useGame = create<GameState>((set, get) => ({
   splatPlayer: () => {
     const s = get();
     if (s.phase !== "hunt") return;
-    set({ phase: "result", outcome: "splatted" });
+    const tell = buildTell({
+      outcome: "splatted",
+      camo: s.camoScore,
+      coverage: shared.coverage,
+      paintColor: shared.playerColor,
+      surfaceColor: shared.nearestSurfaceColor,
+      taunting: shared.taunting,
+    });
+    set({ phase: "result", outcome: "splatted", tell });
   },
 
   survive: () => {
     const s = get();
     if (s.phase !== "hunt") return;
-    set({ phase: "result", outcome: "survived" });
+    const tell = buildTell({
+      outcome: "survived",
+      camo: s.camoScore,
+      coverage: shared.coverage,
+      paintColor: shared.playerColor,
+      surfaceColor: shared.nearestSurfaceColor,
+      taunting: shared.taunting,
+    });
+    set({ phase: "result", outcome: "survived", tell });
   },
 
   reset: () => set({ phase: "menu", outcome: null }),

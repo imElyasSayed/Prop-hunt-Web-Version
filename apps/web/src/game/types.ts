@@ -25,6 +25,19 @@ export interface Stamp {
   seq: number;
 }
 
+/**
+ * The "Answer-Check": the post-round readout of exactly why the round ended the
+ * way it did — the tell that got you found, or the blend that saved you.
+ */
+export interface Tell {
+  outcome: "survived" | "splatted";
+  headline: string;
+  detail: string;
+  camoPct: number;
+  paintColor: string;
+  surfaceColor: string;
+}
+
 /** A prop the player can paint against and hide near, plus its "true" color. */
 export interface PropDef {
   id: string;
