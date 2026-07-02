@@ -3,7 +3,7 @@
 // scene components, NOT here — the store only holds discrete/UI-facing state.
 import { create } from "zustand";
 import type { GamePhase, RoundOutcome, Stamp } from "./types";
-import { PAINT_BUDGET, PALETTE, PREP_SECONDS } from "./constants";
+import { PAINT_BUDGET, PALETTE, PREP_SECONDS, SAFE_ZONE_RELOCATE } from "./constants";
 
 interface GameState {
   phase: GamePhase;
@@ -21,8 +21,18 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Pressure System HUD snapshot (updated ~8x/s by the Pressure component). */
+  pressure: {
+    safeTimer: number;      // seconds until the safe zone relocates
+    safeRelocating: boolean; // true during the telegraph window
+    inSafe: boolean;        // player is inside the safe bubble
+    tellDebt: number;       // 0..1
+    ghosting: boolean;      // silhouette bleeding through camo
+    purgeWarn: boolean;     // a purge flush is telegraphing
+  };
 
   // ---- actions ----
+  setPressure: (p: Partial<GameState["pressure"]>) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +62,16 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  pressure: {
+    safeTimer: SAFE_ZONE_RELOCATE,
+    safeRelocating: false,
+    inSafe: false,
+    tellDebt: 0,
+    ghosting: false,
+    purgeWarn: false,
+  },
+
+  setPressure: (p) => set((s) => ({ pressure: { ...s.pressure, ...p } })),
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +84,14 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      pressure: {
+        safeTimer: SAFE_ZONE_RELOCATE,
+        safeRelocating: false,
+        inSafe: false,
+        tellDebt: 0,
+        ghosting: false,
+        purgeWarn: false,
+      },
     });
   },
 

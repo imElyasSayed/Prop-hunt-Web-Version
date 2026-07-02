@@ -143,6 +143,40 @@ export function win() {
   });
 }
 
+/** Soft two-note chime when the safe zone relocates. */
+export function zoneShift() {
+  const c = ac();
+  if (!c) return;
+  [660, 990].forEach((f, i) => {
+    const o = c.createOscillator();
+    o.type = "sine";
+    o.frequency.value = f;
+    const g = env(o, 0.16, 0.01, 0.28);
+    if (g) {
+      o.start(c.currentTime + i * 0.1);
+      o.stop(c.currentTime + i * 0.1 + 0.3);
+    }
+  });
+}
+
+/** Pulsing alarm while a Purge flush telegraphs on your cell. */
+export function purgeAlarm() {
+  const c = ac();
+  if (!c) return;
+  const o = c.createOscillator();
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(300, c.currentTime);
+  o.frequency.setValueAtTime(400, c.currentTime + 0.12);
+  o.frequency.setValueAtTime(300, c.currentTime + 0.24);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 1400;
+  o.connect(lp);
+  env(lp, 0.2, 0.01, 0.4);
+  o.start();
+  o.stop(c.currentTime + 0.42);
+}
+
 /** Soft UI click. */
 export function click() {
   const c = ac();

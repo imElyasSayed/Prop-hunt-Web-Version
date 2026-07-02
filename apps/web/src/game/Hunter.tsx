@@ -70,8 +70,11 @@ export function Hunter() {
       shared.coverage,
       shared.nearestSurfaceColor,
     );
-    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
-    const watched = inCone && detectable;
+    // Pressure System: a maxed Tell Debt (ghosting) or a Purge flush exposes you
+    // even in perfect camo; the safe bubble makes you untaggable while inside.
+    const exposed = shared.ghosting || shared.forcedReveal > 0;
+    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting || exposed;
+    const watched = inCone && detectable && !shared.inSafeZone;
 
     setWatched(watched);
 
@@ -140,8 +143,8 @@ export function Hunter() {
     shared.hunterPos.copy(pos);
     shared.hunterDir.copy(dir.current);
 
-    // --- tag ---
-    if (suspicion.current >= 1 && dist < HUNTER_TAG_RANGE) {
+    // --- tag --- (never inside the safe bubble)
+    if (suspicion.current >= 1 && dist < HUNTER_TAG_RANGE && !shared.inSafeZone) {
       splat();
     }
   });

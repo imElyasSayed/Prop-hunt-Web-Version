@@ -8,6 +8,7 @@ import { Room } from "./Room";
 import { Player } from "./Player";
 import { Hunter } from "./Hunter";
 import { AmbientDecals, EliminationSplat } from "./Decals";
+import { Pressure } from "./Pressure";
 import { useKeys } from "./useKeys";
 import { useGame } from "./store";
 import { shared } from "./shared";
@@ -69,6 +70,7 @@ export function Scene() {
         <Room />
         <AmbientDecals />
         <EliminationSplat />
+        <Pressure />
         <Player keys={keys} />
         <Hunter />
       </Suspense>

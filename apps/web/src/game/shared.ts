@@ -15,6 +15,14 @@ export const shared = {
   nearestSurfaceColor: "#cfc9bd",
   /** True once the player has requested to end prep early / start moving. */
   taunting: false,
+  /** Pressure System: player is inside the safe bubble (no tag/suspicion). */
+  inSafeZone: false,
+  /** Tell Debt 0..1 — camping one cell fills it; 1 = your silhouette ghosts. */
+  tellDebt: 0,
+  /** True once Tell Debt maxes: your true silhouette bleeds through camo. */
+  ghosting: false,
+  /** Seconds a Purge flush has forced you visible. */
+  forcedReveal: 0,
 };
 
 export function resetShared() {
@@ -25,4 +33,8 @@ export function resetShared() {
   shared.coverage = 0;
   shared.nearestSurfaceColor = "#cfc9bd";
   shared.taunting = false;
+  shared.inSafeZone = false;
+  shared.tellDebt = 0;
+  shared.ghosting = false;
+  shared.forcedReveal = 0;
 }

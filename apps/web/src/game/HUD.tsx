@@ -169,6 +169,57 @@ function TauntButton() {
   );
 }
 
+function PressureHUD() {
+  const p = useGame((s) => s.pressure);
+  const debtPct = Math.round(p.tellDebt * 100);
+  const hot = p.tellDebt > 0.66;
+  return (
+    <>
+      {/* purge alarm banner */}
+      {p.purgeWarn && (
+        <div style={styles.purgeBanner}>⚠ PURGE INCOMING — clear the hot zone!</div>
+      )}
+
+      {/* safe-zone status chip (under the timer) */}
+      <div style={styles.safeChip}>
+        {p.inSafe ? (
+          <span style={{ color: "#1a9c4c" }}>🛡 SAFE — can&apos;t be tagged here</span>
+        ) : p.safeRelocating ? (
+          <span style={{ color: "#7a9c1a" }}>🟢 Safe zone moving → new spot marked</span>
+        ) : (
+          <span style={{ color: "#555" }}>
+            🛡 Safe zone relocates in {Math.ceil(p.safeTimer)}s
+          </span>
+        )}
+      </div>
+
+      {/* tell-debt meter */}
+      <div style={styles.tellWrap}>
+        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3, color: "#222" }}>
+          {p.ghosting ? (
+            <b style={{ color: "#ff2e4f" }}>👻 GHOSTING — bleeding through! MOVE!</b>
+          ) : (
+            <>TELL DEBT {hot && <b style={{ color: "#d23" }}>— keep moving</b>}</>
+          )}
+        </div>
+        <div style={styles.tellTrack}>
+          <div
+            style={{
+              ...styles.tellFill,
+              width: `${debtPct}%`,
+              background: p.ghosting
+                ? "#ff2e4f"
+                : hot
+                  ? "linear-gradient(90deg,#ffd023,#ff7a17)"
+                  : "linear-gradient(90deg,#0fd4e6,#8a4cff)",
+            }}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function HUD() {
   const phase = useGame((s) => s.phase);
   const timeLeft = useGame((s) => s.timeLeft);
@@ -221,6 +272,7 @@ export function HUD() {
             <li><b>🎯 sample</b> a prop&apos;s exact color, then paint to match it</li>
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
+            <li>🛡 Duck into the <b>safe zone</b> — but don&apos;t camp: <b>Tell Debt</b> builds and a <b>Purge</b> flushes hot spots</li>
           </ul>
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
@@ -278,6 +330,8 @@ export function HUD() {
         <CamoMeter />
         {isPrep && <PaintMeter />}
       </div>
+
+      {!isPrep && <PressureHUD />}
 
       {isPrep && (
         <div style={styles.bottomCenter}>
@@ -366,6 +420,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
   watch: { color: "#fff", background: "#ff2e4f", padding: "6px 12px", borderRadius: 999, fontWeight: 800, fontSize: 13 },
+  purgeBanner: { position: "absolute", top: 66, left: "50%", transform: "translateX(-50%)", background: "#ff2e4f", color: "#fff", fontWeight: 800, fontSize: 14, padding: "8px 18px", borderRadius: 999, boxShadow: "0 4px 16px #ff2e4f55" },
+  safeChip: { position: "absolute", top: 104, left: "50%", transform: "translateX(-50%)", background: "#fffe", borderRadius: 999, padding: "6px 14px", fontSize: 13, fontWeight: 700, boxShadow: "0 3px 12px #0002" },
+  tellWrap: { position: "absolute", left: 20, bottom: 118, background: "#fffe", borderRadius: 12, padding: "8px 12px", width: 260, boxShadow: "0 4px 16px #0002" },
+  tellTrack: { height: 10, background: "#e6e6ea", borderRadius: 999, overflow: "hidden" },
+  tellFill: { height: "100%", borderRadius: 999, transition: "width 0.12s, background 0.2s" },
   bottomLeft: { position: "absolute", left: 20, bottom: 20, display: "flex", flexDirection: "column", gap: 12 },
   bottomCenter: {
     position: "absolute",

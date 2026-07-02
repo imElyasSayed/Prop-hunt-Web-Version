@@ -43,6 +43,25 @@ export const HUNTER_SUSPICION_TO_TAG = 1.4; // seconds at full mismatch
 // Below this match [0..1] against the nearest surface, you read as "wrong".
 export const CAMO_SAFE_THRESHOLD = 0.6;
 
+// ---- Rotating Safe Zone + Pressure System (anti-camp) ----
+// Fold + Nerve reward holding still, so the arena pushes back: a moving safe
+// bubble, a debt that grows while you camp one spot, "redlined" over-camped
+// cells, and a periodic purge flush on the hottest cell. Durations are scaled
+// to the ~90 s hunt (the design's minutes → tens of seconds here).
+export const CELL = 3;                    // coarse dwell-grid cell size (units)
+export const SAFE_ZONE_RADIUS = 4;        // the safe bubble's radius
+export const SAFE_ZONE_RELOCATE = 30;     // seconds between relocations
+export const SAFE_ZONE_TELEGRAPH = 5;     // seconds the next spot is shown first
+export const TELL_TO_GHOST = 13;          // seconds camping one cell → silhouette ghosts
+export const TELL_DRAIN_ON_MOVE = 0.45;   // fraction of debt shed on entering a new cell
+export const REDLINE_HEAT = 12;           // cumulative seconds in a cell → it redlines
+export const REDLINE_REOPEN = 22;         // seconds a redlined cell stays sealed
+export const PURGE_INTERVAL = 40;         // seconds between purge flushes
+export const PURGE_TELEGRAPH = 3;         // warning seconds before a purge fires
+export const PURGE_FLUSH = 1.4;           // seconds the flush ring is lethal-ish
+export const PURGE_RADIUS = 3.5;          // purge ring radius
+export const PURGE_REVEAL = 3;            // seconds you stay lit if caught in a purge
+
 // The single Canvas (map) shipped in the base game: "The Studio".
 // `position` is the collision-box CENTER; models (origin at their base) are
 // placed on the floor at [x, 0, z] since centerY == height/2 for every prop.
