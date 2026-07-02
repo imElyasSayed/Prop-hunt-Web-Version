@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+.next/
+out/
+build/
+dist/
+
+# misc / os
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+
+# env
+.env
+.env*.local
+
+# editors
+.vscode/
+.idea/
+
+# raw asset downloads (kept locally, not in the repo)
+*.zip
+
+# next
+next-env.d.ts
