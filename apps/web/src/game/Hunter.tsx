@@ -10,6 +10,7 @@ import { useModel } from "./models";
 import { shared } from "./shared";
 import { scoreCamo } from "./camo";
 import { collide } from "./collision";
+import { SCALE_TIERS } from "./scaling";
 import {
   HUNTER_SPEED,
   HUNTER_VIEW_RANGE,
@@ -44,12 +45,19 @@ export function Hunter() {
   const phase = useGame((s) => s.phase);
   const splat = useGame((s) => s.splatPlayer);
   const setWatched = useGame((s) => s.setWatched);
+  const hunterScaleKey = useGame((s) => s.hunterScaleKey);
+  const hunterTier = SCALE_TIERS[hunterScaleKey];
   const hunterObj = useModel("blob_hunter");
 
   useFrame((_, dtRaw) => {
     const g = group.current;
     if (!g) return;
     const dt = Math.min(dtRaw, 0.05); // clamp huge frames
+
+    // Scale Roulette: the Hunter can be a different size (Mixed Handicap).
+    g.scale.setScalar(hunterTier.scale);
+    shared.hunterScale = hunterTier.scale;
+    const hunterRadius = 0.62 * hunterTier.scale;
 
     if (phase !== "hunt") {
       // frozen at spawn during prep/menu/result
@@ -70,7 +78,9 @@ export function Hunter() {
       shared.coverage,
       shared.nearestSurfaceColor,
     );
-    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
+    // Bigger blobs read as "off" more easily; Teeny ones are harder to clock.
+    const threshold = CAMO_SAFE_THRESHOLD * shared.detectMult;
+    const detectable = camo < threshold || shared.taunting;
     const watched = inCone && detectable;
 
     setWatched(watched);
@@ -120,7 +130,7 @@ export function Hunter() {
       dir.current.lerp(desired, 0.12).normalize();
       const speed = watched ? HUNTER_SPEED * 1.15 : HUNTER_SPEED;
       const step = speed * dt;
-      const [cx, cz] = collide(pos.x + moveDir.x * step, pos.z + moveDir.z * step, 0.62);
+      const [cx, cz] = collide(pos.x + moveDir.x * step, pos.z + moveDir.z * step, hunterRadius);
       const moved = Math.hypot(cx - pos.x, cz - pos.z);
       pos.x = cx;
       pos.z = cz;
@@ -140,8 +150,10 @@ export function Hunter() {
     shared.hunterPos.copy(pos);
     shared.hunterDir.copy(dir.current);
 
-    // --- tag ---
-    if (suspicion.current >= 1 && dist < HUNTER_TAG_RANGE) {
+    // --- tag --- (a bigger Hunter has longer reach; a bigger target is closer)
+    const tagRange =
+      HUNTER_TAG_RANGE * hunterTier.scale + (shared.playerScale - 1) * 0.4;
+    if (suspicion.current >= 1 && dist < tagRange) {
       splat();
     }
   });

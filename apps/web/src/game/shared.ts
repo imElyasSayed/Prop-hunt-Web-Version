@@ -15,6 +15,12 @@ export const shared = {
   nearestSurfaceColor: "#cfc9bd",
   /** True once the player has requested to end prep early / start moving. */
   taunting: false,
+  /** Scale Roulette: the player's body scale this round (for camera framing). */
+  playerScale: 1,
+  /** Detectability multiplier from the player's scale (Hunter reads this). */
+  detectMult: 1,
+  /** The Hunter's body scale this round (Mixed Handicap can make it GIGA). */
+  hunterScale: 1,
 };
 
 export function resetShared() {
@@ -25,4 +31,7 @@ export function resetShared() {
   shared.coverage = 0;
   shared.nearestSurfaceColor = "#cfc9bd";
   shared.taunting = false;
+  shared.playerScale = 1;
+  shared.detectMult = 1;
+  shared.hunterScale = 1;
 }

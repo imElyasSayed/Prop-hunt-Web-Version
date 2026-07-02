@@ -5,6 +5,7 @@ import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
 import * as sfx from "./sound";
+import { SCALE_TIERS, SCALE_MODES } from "./scaling";
 import {
   PALETTE,
   PAINT_BUDGET,
@@ -169,15 +170,55 @@ function TauntButton() {
   );
 }
 
+function ScalePicker() {
+  const scaleMode = useGame((s) => s.scaleMode);
+  const setScaleMode = useGame((s) => s.setScaleMode);
+  return (
+    <div style={styles.scalePicker}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: "#333", marginBottom: 6 }}>
+        SCALE ROULETTE — pick your body size
+      </div>
+      <div style={styles.scaleGrid}>
+        {SCALE_MODES.map((m) => {
+          const on = scaleMode === m.mode;
+          return (
+            <button
+              key={m.mode}
+              onClick={() => {
+                sfx.click();
+                setScaleMode(m.mode);
+              }}
+              title={m.desc}
+              style={{
+                ...styles.scaleBtn,
+                background: on ? "#8a4cff" : "#f2eef8",
+                color: on ? "#fff" : "#4a3a6a",
+                borderColor: on ? "#6a34cf" : "#e0d8ef",
+              }}
+            >
+              <span style={{ fontSize: 18 }}>{m.emoji}</span>
+              <span style={{ fontSize: 11, fontWeight: 800 }}>{m.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function HUD() {
   const phase = useGame((s) => s.phase);
   const timeLeft = useGame((s) => s.timeLeft);
   const survivedFor = useGame((s) => s.survivedFor);
   const outcome = useGame((s) => s.outcome);
   const beingWatched = useGame((s) => s.beingWatched);
+  const playerScaleKey = useGame((s) => s.playerScaleKey);
+  const hunterScaleKey = useGame((s) => s.hunterScaleKey);
   const startPrep = useGame((s) => s.startPrep);
   const beginHunt = useGame((s) => s.beginHunt);
   const prevWatched = useRef(false);
+  const pTier = SCALE_TIERS[playerScaleKey];
+  const hTier = SCALE_TIERS[hunterScaleKey];
 
   const start = () => {
     sfx.initAudio(); // unlock audio on this user gesture
@@ -222,6 +263,7 @@ export function HUD() {
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
           </ul>
+          <ScalePicker />
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
       </div>
@@ -241,6 +283,10 @@ export function HUD() {
               ? "You blended perfectly. You win the Splotch Pot."
               : `The Hunter found you at ${fmt(survivedFor)}.`}
           </p>
+          <div style={styles.scaleBadge}>
+            Played as <b>{pTier.emoji} {pTier.label}</b> ({pTier.scale}×) · score ×{pTier.scoreMult}
+            {hTier.key !== "normal" && <> · vs {hTier.emoji} {hTier.label} Hunter</>}
+          </div>
           <div style={styles.statRow}>
             <div style={styles.stat}>
               <div style={styles.statNum}>{fmt(survivedFor)}</div>
@@ -249,6 +295,16 @@ export function HUD() {
             <div style={styles.stat}>
               <div style={styles.statNum}>{Math.round(useGame.getState().camoScore * 100)}%</div>
               <div style={styles.statLbl}>final camo</div>
+            </div>
+            <div style={styles.stat}>
+              <div style={{ ...styles.statNum, color: "#ff2e9a" }}>
+                {Math.round(
+                  (survived
+                    ? survivedFor * 10 + Math.round(useGame.getState().camoScore * 100)
+                    : survivedFor * 10) * pTier.scoreMult,
+                )}
+              </div>
+              <div style={styles.statLbl}>splat score</div>
             </div>
           </div>
           <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
@@ -264,7 +320,10 @@ export function HUD() {
     <>
       <div style={styles.topBar}>
         <div style={{ ...styles.roleBanner, background: isPrep ? "#8a4cff" : "#ff2e4f" }}>
-          {isPrep ? "PAINT PHASE — hide yourself!" : "HUNT PHASE — don't move much!"}
+          <span>{pTier.emoji} {pTier.label}</span>
+          {" · "}
+          {isPrep ? "hide yourself!" : "don't move much!"}
+          {hTier.key !== "normal" && ` · vs ${hTier.emoji} Hunter`}
         </div>
         <div style={styles.timer}>{fmt(time)}</div>
         <div style={{ width: 220, textAlign: "right" }}>
@@ -412,7 +471,11 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
-  statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
+  scalePicker: { margin: "16px 0 4px", background: "#faf8ff", border: "1px solid #ece5fb", borderRadius: 14, padding: "10px 12px" },
+  scaleGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 },
+  scaleBtn: { display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 4px", border: "2px solid", borderRadius: 10, cursor: "pointer", transition: "all 0.12s" },
+  scaleBadge: { fontSize: 13, color: "#444", background: "#f4f1fb", borderRadius: 10, padding: "7px 12px", margin: "6px 0 2px" },
+  statRow: { display: "flex", gap: 20, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },
   statNum: { fontSize: 32, fontWeight: 800, color: "#191225", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-baloo), system-ui, sans-serif" },
   statLbl: { fontSize: 12, opacity: 0.6, textTransform: "uppercase", letterSpacing: 1 },

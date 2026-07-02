@@ -4,6 +4,11 @@
 import { create } from "zustand";
 import type { GamePhase, RoundOutcome, Stamp } from "./types";
 import { PAINT_BUDGET, PALETTE, PREP_SECONDS } from "./constants";
+import {
+  type ScaleKey,
+  type ScaleMode,
+  resolveScales,
+} from "./scaling";
 
 interface GameState {
   phase: GamePhase;
@@ -21,8 +26,15 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Scale Roulette: the menu-selected mode (persists across rounds). */
+  scaleMode: ScaleMode;
+  /** Resolved player body scale for the current round. */
+  playerScaleKey: ScaleKey;
+  /** Resolved Hunter body scale for the current round (Mixed Handicap). */
+  hunterScaleKey: ScaleKey;
 
   // ---- actions ----
+  setScaleMode: (m: ScaleMode) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,9 +64,15 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  scaleMode: "roulette",
+  playerScaleKey: "normal",
+  hunterScaleKey: "normal",
+
+  setScaleMode: (m) => set({ scaleMode: m }),
 
   startPrep: () => {
     seqCounter = 0;
+    const { playerKey, hunterKey } = resolveScales(get().scaleMode);
     set({
       phase: "prep",
       timeLeft: PREP_SECONDS,
@@ -64,6 +82,8 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      playerScaleKey: playerKey,
+      hunterScaleKey: hunterKey,
     });
   },
 

@@ -17,11 +17,15 @@ function CameraRig() {
   const { camera } = useThree();
   const target = useRef(new THREE.Vector3());
   useFrame(() => {
-    // follow the player from behind-and-above
+    // follow the player from behind-and-above, pulling back for bigger blobs
     const p = shared.playerPos;
-    const desired = new THREE.Vector3(p.x, p.y + 7.5, p.z + 9.5);
+    const z = 0.85 + shared.playerScale * 0.42; // ~1.02 (Teeny) .. ~1.77 (GIGA)
+    const desired = new THREE.Vector3(p.x, p.y + 7.5 * z, p.z + 9.5 * z);
     camera.position.lerp(desired, 0.08);
-    target.current.lerp(new THREE.Vector3(p.x, p.y + 0.5, p.z), 0.12);
+    target.current.lerp(
+      new THREE.Vector3(p.x, p.y + 0.5 * shared.playerScale, p.z),
+      0.12,
+    );
     camera.lookAt(target.current);
   });
   return null;

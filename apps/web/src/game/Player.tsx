@@ -11,6 +11,7 @@ import { spray } from "./sound";
 import { nearestSurfaceColor, scoreCamo } from "./camo";
 import { collide } from "./collision";
 import { shared } from "./shared";
+import { SCALE_TIERS } from "./scaling";
 import type { Keys } from "./useKeys";
 import { PLAYER_SPEED, PLAYER_RADIUS } from "./constants";
 
@@ -24,6 +25,8 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
 
   const stamps = useGame((s) => s.stamps);
   const phase = useGame((s) => s.phase);
+  const playerScaleKey = useGame((s) => s.playerScaleKey);
+  const tier = SCALE_TIERS[playerScaleKey];
   const addStamp = useGame((s) => s.addStamp);
   const setCamoScore = useGame((s) => s.setCamoScore);
   const setSurfaceColor = useGame((s) => s.setSurfaceColor);
@@ -72,6 +75,13 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
     if (!g) return;
     const k = keys.current;
 
+    // --- Scale Roulette: size, speed, and detectability for this round ---
+    if (blob.current) blob.current.scale.setScalar(tier.scale);
+    shared.playerScale = tier.scale;
+    shared.detectMult = tier.detectMult;
+    const speed = PLAYER_SPEED * tier.speedMult;
+    const radius = PLAYER_RADIUS * tier.scale;
+
     // --- movement (world-axis, camera looks down -Z) ---
     if (phase === "prep" || phase === "hunt") {
       let mx = 0;
@@ -82,9 +92,9 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
       if (k.right) mx += 1;
       if (mx || mz) {
         const len = Math.hypot(mx, mz);
-        const nx = g.position.x + (mx / len) * PLAYER_SPEED * dt;
-        const nz = g.position.z + (mz / len) * PLAYER_SPEED * dt;
-        const [cx, cz] = collide(nx, nz, PLAYER_RADIUS);
+        const nx = g.position.x + (mx / len) * speed * dt;
+        const nz = g.position.z + (mz / len) * speed * dt;
+        const [cx, cz] = collide(nx, nz, radius);
         g.position.x = cx;
         g.position.z = cz;
       }
