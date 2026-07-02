@@ -9,6 +9,7 @@ export interface Keys {
   right: boolean;
   spinL: boolean;
   spinR: boolean;
+  fold: boolean;
 }
 
 const MAP: Record<string, keyof Keys> = {
@@ -22,6 +23,8 @@ const MAP: Record<string, keyof Keys> = {
   ArrowRight: "right",
   KeyQ: "spinL",
   KeyE: "spinR",
+  KeyF: "fold",
+  Space: "fold",
 };
 
 export function useKeys() {
@@ -32,6 +35,7 @@ export function useKeys() {
     right: false,
     spinL: false,
     spinR: false,
+    fold: false,
   });
 
   useEffect(() => {
@@ -39,7 +43,7 @@ export function useKeys() {
       const k = MAP[e.code];
       if (k) {
         keys.current[k] = true;
-        if (e.code.startsWith("Arrow")) e.preventDefault();
+        if (e.code.startsWith("Arrow") || e.code === "Space") e.preventDefault();
       }
     };
     const up = (e: KeyboardEvent) => {

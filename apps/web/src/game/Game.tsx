@@ -1,9 +1,19 @@
-// Top-level game surface: the 3D scene with the DOM HUD layered on top.
+// Top-level game surface. Single-player by default (3D scene + DOM HUD); the
+// menu can switch into networked multiplayer (lobby + networked scene).
 "use client";
 import { Scene } from "./Scene";
 import { HUD } from "./HUD";
+import { NetGame } from "./NetGame";
+import { useGame } from "./store";
 
 export function Game() {
+  const multiplayer = useGame((s) => s.multiplayer);
+  const setMultiplayer = useGame((s) => s.setMultiplayer);
+
+  if (multiplayer) {
+    return <NetGame onExit={() => setMultiplayer(false)} />;
+  }
+
   return (
     <main
       style={{

@@ -223,6 +223,16 @@ export function HUD() {
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
           </ul>
           <button style={styles.play} onClick={start}>PLAY ▶</button>
+          <button
+            style={styles.multi}
+            onClick={() => {
+              sfx.initAudio();
+              sfx.click();
+              useGame.getState().setMultiplayer(true);
+            }}
+          >
+            MULTIPLAYER ▶
+          </button>
         </div>
       </div>
     );
@@ -336,6 +346,22 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 6px 0 #c4176f",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
     letterSpacing: 0.5,
+  },
+  multi: {
+    marginTop: 12,
+    padding: "10px 24px",
+    fontSize: 15,
+    fontWeight: 800,
+    color: "#fff",
+    background: "#8a4cff",
+    border: "none",
+    borderRadius: 12,
+    cursor: "pointer",
+    boxShadow: "0 4px 0 #6a34cf",
+    fontFamily: "var(--font-baloo), system-ui, sans-serif",
+    display: "block",
+    marginLeft: "auto",
+    marginRight: "auto",
   },
   topBar: {
     position: "absolute",

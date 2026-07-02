@@ -21,8 +21,11 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** True when the player has entered networked multiplayer mode. */
+  multiplayer: boolean;
 
   // ---- actions ----
+  setMultiplayer: (m: boolean) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +55,9 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  multiplayer: false,
+
+  setMultiplayer: (m) => set({ multiplayer: m }),
 
   startPrep: () => {
     seqCounter = 0;
