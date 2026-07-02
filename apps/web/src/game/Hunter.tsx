@@ -10,6 +10,8 @@ import { useModel } from "./models";
 import { shared } from "./shared";
 import { scoreCamo } from "./camo";
 import { collide } from "./collision";
+import { hasLineOfSight } from "./los";
+import * as sfx from "./sound";
 import {
   HUNTER_SPEED,
   HUNTER_VIEW_RANGE,
@@ -17,6 +19,13 @@ import {
   HUNTER_TAG_RANGE,
   HUNTER_SUSPICION_TO_TAG,
   CAMO_SAFE_THRESHOLD,
+  PULSE_RANGE,
+  PULSE_CHARGE,
+  PULSE_EXPAND,
+  PULSE_REVEAL_CAMO,
+  PULSE_REVEAL_TIME,
+  PULSE_COOLDOWN,
+  PULSE_EMPTY_PENALTY,
 } from "./constants";
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -44,6 +53,9 @@ export function Hunter() {
   const phase = useGame((s) => s.phase);
   const splat = useGame((s) => s.splatPlayer);
   const setWatched = useGame((s) => s.setWatched);
+  const setPinged = useGame((s) => s.setPinged);
+  const pulseCooldown = useRef(15); // first sonar ~15s into the hunt
+  const pulseTimer = useRef(0);
   const hunterObj = useModel("blob_hunter");
 
   useFrame((_, dtRaw) => {
@@ -63,23 +75,75 @@ export function Hunter() {
     const dist = toPlayer.length();
     const toNorm = toPlayer.clone().normalize();
 
-    const inCone =
-      dist < HUNTER_VIEW_RANGE && dir.current.dot(toNorm) > HUNTER_FOV_DOT;
     const camo = scoreCamo(
       shared.playerColor,
       shared.coverage,
       shared.nearestSurfaceColor,
     );
-    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
-    const watched = inCone && detectable;
+
+    // --- Pulse Ping (sonar) state machine ---
+    if (shared.revealTimer > 0)
+      shared.revealTimer = Math.max(0, shared.revealTimer - dt);
+    const pulse = shared.pulse;
+    if (pulse.phase === "idle") {
+      pulseCooldown.current -= dt;
+      if (pulseCooldown.current <= 0) {
+        pulse.phase = "charging";
+        pulse.active = true;
+        pulse.t = 0;
+        pulse.x = pos.x;
+        pulse.z = pos.z;
+        pulseTimer.current = PULSE_CHARGE;
+        sfx.pulseCharge();
+      }
+    } else if (pulse.phase === "charging") {
+      pulseTimer.current -= dt;
+      pulse.t = 1 - Math.max(0, pulseTimer.current) / PULSE_CHARGE;
+      pulse.x = pos.x; // ring originates from the Hunter's current spot
+      pulse.z = pos.z;
+      if (pulseTimer.current <= 0) {
+        sfx.pulsePing();
+        const los = hasLineOfSight(pos.x, pos.z, shared.playerPos.x, shared.playerPos.z);
+        // a folded hider (silhouette-fold branch) or a well-blended one returns nothing
+        const revealed =
+          dist <= PULSE_RANGE && los && camo < PULSE_REVEAL_CAMO;
+        if (revealed) {
+          shared.revealTimer = PULSE_REVEAL_TIME;
+          pulseCooldown.current = PULSE_COOLDOWN;
+        } else {
+          pulseCooldown.current = PULSE_COOLDOWN + PULSE_EMPTY_PENALTY;
+        }
+        pulse.phase = "expanding";
+        pulse.t = 0;
+        pulseTimer.current = PULSE_EXPAND;
+      }
+    } else if (pulse.phase === "expanding") {
+      pulseTimer.current -= dt;
+      pulse.t = 1 - Math.max(0, pulseTimer.current) / PULSE_EXPAND;
+      if (pulseTimer.current <= 0) {
+        pulse.phase = "idle";
+        pulse.active = false;
+        pulse.t = 0;
+      }
+    }
+    const revealActive = shared.revealTimer > 0;
+    if (revealActive !== useGame.getState().pinged) setPinged(revealActive);
+
+    const inCone =
+      dist < HUNTER_VIEW_RANGE && dir.current.dot(toNorm) > HUNTER_FOV_DOT;
+    // A pulse reveal exposes you even in perfect camo, for its brief window.
+    const detectable =
+      camo < CAMO_SAFE_THRESHOLD || shared.taunting || revealActive;
+    const watched = (inCone || revealActive) && detectable;
 
     setWatched(watched);
 
     // --- suspicion ---
     if (watched) {
-      const mismatch = shared.taunting
-        ? 1
-        : Math.max(0.15, (CAMO_SAFE_THRESHOLD - camo) / CAMO_SAFE_THRESHOLD);
+      const mismatch =
+        shared.taunting || revealActive
+          ? 1
+          : Math.max(0.15, (CAMO_SAFE_THRESHOLD - camo) / CAMO_SAFE_THRESHOLD);
       suspicion.current = Math.min(
         1,
         suspicion.current + (mismatch * dt) / HUNTER_SUSPICION_TO_TAG,

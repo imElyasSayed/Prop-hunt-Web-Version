@@ -21,8 +21,11 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** True while a Pulse Ping has the player lit up. */
+  pinged: boolean;
 
   // ---- actions ----
+  setPinged: (p: boolean) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +55,9 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  pinged: false,
+
+  setPinged: (p) => set({ pinged: p }),
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +70,7 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      pinged: false,
     });
   },
 

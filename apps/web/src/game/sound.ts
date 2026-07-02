@@ -143,6 +143,45 @@ export function win() {
   });
 }
 
+/** Rising charge-up whine before a Pulse Ping fires (your warning to hide). */
+export function pulseCharge() {
+  const c = ac();
+  if (!c) return;
+  const o = c.createOscillator();
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(180, c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(1400, c.currentTime + 0.85);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 2200;
+  o.connect(lp);
+  env(lp, 0.16, 0.05, 0.85);
+  o.start();
+  o.stop(c.currentTime + 0.95);
+}
+
+/** The sonar boom when the pulse releases. */
+export function pulsePing() {
+  const c = ac();
+  if (!c) return;
+  const o = c.createOscillator();
+  o.type = "sine";
+  o.frequency.setValueAtTime(900, c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(180, c.currentTime + 0.5);
+  env(o, 0.4, 0.004, 0.55);
+  o.start();
+  o.stop(c.currentTime + 0.6);
+  const src = c.createBufferSource();
+  src.buffer = noiseBuffer(c, 0.3);
+  const bp = c.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 1400;
+  src.connect(bp);
+  env(bp, 0.22, 0.004, 0.3);
+  src.start();
+  src.stop(c.currentTime + 0.31);
+}
+
 /** Soft UI click. */
 export function click() {
   const c = ac();

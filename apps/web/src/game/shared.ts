@@ -15,6 +15,17 @@ export const shared = {
   nearestSurfaceColor: "#cfc9bd",
   /** True once the player has requested to end prep early / start moving. */
   taunting: false,
+  /** Pulse Ping shockwave state (for the ring VFX + reveal marker). */
+  pulse: {
+    active: false,
+    phase: "idle" as "idle" | "charging" | "expanding",
+    /** 0..1 charge, then 0..1 expansion progress. */
+    t: 0,
+    x: 0,
+    z: -9,
+  },
+  /** Seconds the player stays lit after a pulse reveals them. */
+  revealTimer: 0,
 };
 
 export function resetShared() {
@@ -25,4 +36,8 @@ export function resetShared() {
   shared.coverage = 0;
   shared.nearestSurfaceColor = "#cfc9bd";
   shared.taunting = false;
+  shared.pulse.active = false;
+  shared.pulse.phase = "idle";
+  shared.pulse.t = 0;
+  shared.revealTimer = 0;
 }

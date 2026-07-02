@@ -43,6 +43,18 @@ export const HUNTER_SUSPICION_TO_TAG = 1.4; // seconds at full mismatch
 // Below this match [0..1] against the nearest surface, you read as "wrong".
 export const CAMO_SAFE_THRESHOLD = 0.6;
 
+// ---- Pulse Ping (seeker sonar) ----
+// The Hunter periodically fires a line-of-sight-gated sonar ring. A hider inside
+// the radius whose camo is below the reveal line — and who has clear LOS — lights
+// up for a couple seconds. Duck behind a prop during the charge to dodge it.
+export const PULSE_RANGE = 12;         // metres the ring reaches
+export const PULSE_CHARGE = 0.9;       // charge-up seconds (the counterplay window)
+export const PULSE_EXPAND = 1.5;       // shockwave travel seconds
+export const PULSE_REVEAL_CAMO = 0.7;  // only camo below this reads on the sonar
+export const PULSE_REVEAL_TIME = 2.0;  // seconds a revealed hider stays lit
+export const PULSE_COOLDOWN = 45;      // base seconds between pulses
+export const PULSE_EMPTY_PENALTY = 15; // extra cooldown when a pulse reveals no one (anti-spam)
+
 // The single Canvas (map) shipped in the base game: "The Studio".
 // `position` is the collision-box CENTER; models (origin at their base) are
 // placed on the floor at [x, 0, z] since centerY == height/2 for every prop.

@@ -175,6 +175,7 @@ export function HUD() {
   const survivedFor = useGame((s) => s.survivedFor);
   const outcome = useGame((s) => s.outcome);
   const beingWatched = useGame((s) => s.beingWatched);
+  const pinged = useGame((s) => s.pinged);
   const startPrep = useGame((s) => s.startPrep);
   const beginHunt = useGame((s) => s.beginHunt);
   const prevWatched = useRef(false);
@@ -221,6 +222,7 @@ export function HUD() {
             <li><b>🎯 sample</b> a prop&apos;s exact color, then paint to match it</li>
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
+            <li>🛰 The Hunter fires a <b>sonar Pulse</b> — hear the charge, duck behind a prop to break its line of sight</li>
           </ul>
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
@@ -268,8 +270,11 @@ export function HUD() {
         </div>
         <div style={styles.timer}>{fmt(time)}</div>
         <div style={{ width: 220, textAlign: "right" }}>
-          {!isPrep && beingWatched && (
-            <span style={styles.watch}>👁 SPOTTED — HOLD STILL</span>
+          {!isPrep && pinged ? (
+            <span style={styles.ping}>🛰 PINGED — you&apos;re lit!</span>
+          ) : (
+            !isPrep &&
+            beingWatched && <span style={styles.watch}>👁 SPOTTED — HOLD STILL</span>
           )}
         </div>
       </div>
@@ -366,6 +371,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
   watch: { color: "#fff", background: "#ff2e4f", padding: "6px 12px", borderRadius: 999, fontWeight: 800, fontSize: 13 },
+  ping: { color: "#191225", background: "#0fd4e6", padding: "6px 12px", borderRadius: 999, fontWeight: 800, fontSize: 13, boxShadow: "0 0 0 3px #0fd4e655" },
   bottomLeft: { position: "absolute", left: 20, bottom: 20, display: "flex", flexDirection: "column", gap: 12 },
   bottomCenter: {
     position: "absolute",
