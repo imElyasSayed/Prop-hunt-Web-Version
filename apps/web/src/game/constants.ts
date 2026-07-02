@@ -43,6 +43,18 @@ export const HUNTER_SUSPICION_TO_TAG = 1.4; // seconds at full mismatch
 // Below this match [0..1] against the nearest surface, you read as "wrong".
 export const CAMO_SAFE_THRESHOLD = 0.6;
 
+// ---- Nerve Engine (tension only — NOT coupled to any payout/money) ----
+// Holding still, well-hidden, while the Hunter's cone rakes over you banks a
+// private Nerve multiplier and pays tension points — but your camo stability
+// drains, and if it cracks you flinch into visibility. Moving resets it.
+export const NERVE_MAX = 3.0;            // multiplier ceiling
+export const NERVE_RAMP = 0.42;          // multiplier gained per second under the cone
+export const NERVE_DECAY = 0.7;          // multiplier lost per second when not watched
+export const STAB_DRAIN = 0.34;          // camo stability lost per second while sweating
+export const STAB_RECOVER = 0.5;         // stability regained per second when safe
+export const NERVE_BREAK_TIME = 1.4;     // seconds forced-detectable after a crack
+export const NERVE_POINTS_RATE = 45;     // tension points per second at nerve x1
+
 // The single Canvas (map) shipped in the base game: "The Studio".
 // `position` is the collision-box CENTER; models (origin at their base) are
 // placed on the floor at [x, 0, z] since centerY == height/2 for every prop.

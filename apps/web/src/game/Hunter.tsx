@@ -65,12 +65,17 @@ export function Hunter() {
 
     const inCone =
       dist < HUNTER_VIEW_RANGE && dir.current.dot(toNorm) > HUNTER_FOV_DOT;
+    // Expose the raw geometric cone hit for the Nerve Engine's "being watched
+    // while hidden" tension — this is true even when you're perfectly camo'd.
+    shared.inCone = inCone;
     const camo = scoreCamo(
       shared.playerColor,
       shared.coverage,
       shared.nearestSurfaceColor,
     );
-    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
+    // A Nerve break (flinch) forces you detectable for its brief window.
+    const detectable =
+      camo < CAMO_SAFE_THRESHOLD || shared.taunting || shared.nerveBreak > 0;
     const watched = inCone && detectable;
 
     setWatched(watched);

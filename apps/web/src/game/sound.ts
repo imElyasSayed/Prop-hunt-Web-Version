@@ -143,6 +143,48 @@ export function win() {
   });
 }
 
+/** A single heartbeat "lub-dub" — pitch/thump rises with the Nerve level. */
+export function heartbeat(nerve = 1) {
+  const c = ac();
+  if (!c || !master) return;
+  const t = c.currentTime;
+  const base = 46 + (nerve - 1) * 10; // tenser = higher, tighter thump
+  const gain = 0.28 + (nerve - 1) * 0.12;
+  const thump = (at: number, g: number) => {
+    const o = c.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(base * 1.9, at);
+    o.frequency.exponentialRampToValueAtTime(base, at + 0.09);
+    const gg = c.createGain();
+    gg.gain.setValueAtTime(0, at);
+    gg.gain.linearRampToValueAtTime(g, at + 0.008);
+    gg.gain.exponentialRampToValueAtTime(0.0001, at + 0.16);
+    o.connect(gg);
+    gg.connect(master!);
+    o.start(at);
+    o.stop(at + 0.18);
+  };
+  thump(t, gain); // lub
+  thump(t + 0.16, gain * 0.7); // dub
+}
+
+/** Sharp inhale/flinch when Nerve stability cracks. */
+export function nerveCrack() {
+  const c = ac();
+  if (!c) return;
+  const src = c.createBufferSource();
+  src.buffer = noiseBuffer(c, 0.3);
+  const bp = c.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(600, c.currentTime);
+  bp.frequency.exponentialRampToValueAtTime(2600, c.currentTime + 0.25);
+  bp.Q.value = 1.5;
+  src.connect(bp);
+  env(bp, 0.22, 0.02, 0.26);
+  src.start();
+  src.stop(c.currentTime + 0.31);
+}
+
 /** Soft UI click. */
 export function click() {
   const c = ac();

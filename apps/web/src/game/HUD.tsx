@@ -221,6 +221,7 @@ export function HUD() {
             <li><b>🎯 sample</b> a prop&apos;s exact color, then paint to match it</li>
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
+            <li><b>Hold still</b> while watched — bank <b>Nerve</b>, but your cover cracks if you hold too long</li>
           </ul>
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
@@ -250,7 +251,18 @@ export function HUD() {
               <div style={styles.statNum}>{Math.round(useGame.getState().camoScore * 100)}%</div>
               <div style={styles.statLbl}>final camo</div>
             </div>
+            <div style={styles.stat}>
+              <div style={{ ...styles.statNum, color: "#ff2e9a" }}>
+                ×{useGame.getState().peakNerve.toFixed(1)}
+              </div>
+              <div style={styles.statLbl}>peak nerve</div>
+            </div>
           </div>
+          {useGame.getState().nervePoints > 0 && (
+            <div style={styles.nerveBonus}>
+              🫀 Nerve bonus <b>+{useGame.getState().nervePoints}</b> — you held your ground while watched
+            </div>
+          )}
           <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
         </div>
       </div>
@@ -413,6 +425,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
+  nerveBonus: { fontSize: 13, color: "#444", background: "#fff0f7", border: "1px solid #ffd0e6", borderRadius: 10, padding: "8px 12px", margin: "0 0 4px" },
   stat: { textAlign: "center" },
   statNum: { fontSize: 32, fontWeight: 800, color: "#191225", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-baloo), system-ui, sans-serif" },
   statLbl: { fontSize: 12, opacity: 0.6, textTransform: "uppercase", letterSpacing: 1 },

@@ -21,6 +21,14 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Nerve Engine: current private multiplier (1..NERVE_MAX). */
+  nerve: number;
+  /** Nerve Engine: camo stability remaining while sweating, 1..0. */
+  stability: number;
+  /** Nerve Engine: tension points banked this round (NOT money). */
+  nervePoints: number;
+  /** Highest nerve reached this round (for the result readout). */
+  peakNerve: number;
 
   // ---- actions ----
   startPrep: () => void;
@@ -32,6 +40,12 @@ interface GameState {
   setCamoScore: (s: number) => void;
   setSurfaceColor: (c: string) => void;
   setWatched: (w: boolean) => void;
+  setNerveState: (
+    nerve: number,
+    stability: number,
+    nervePoints: number,
+    peakNerve: number,
+  ) => void;
   splatPlayer: () => void;
   survive: () => void;
   reset: () => void;
@@ -52,6 +66,10 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  nerve: 1,
+  stability: 1,
+  nervePoints: 0,
+  peakNerve: 1,
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +82,10 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      nerve: 1,
+      stability: 1,
+      nervePoints: 0,
+      peakNerve: 1,
     });
   },
 
@@ -110,6 +132,8 @@ export const useGame = create<GameState>((set, get) => ({
   setCamoScore: (s) => set({ camoScore: s }),
   setSurfaceColor: (c) => set({ surfaceColor: c }),
   setWatched: (w) => set({ beingWatched: w }),
+  setNerveState: (nerve, stability, nervePoints, peakNerve) =>
+    set({ nerve, stability, nervePoints, peakNerve }),
 
   splatPlayer: () => {
     const s = get();

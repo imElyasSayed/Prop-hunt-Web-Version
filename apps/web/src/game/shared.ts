@@ -15,6 +15,11 @@ export const shared = {
   nearestSurfaceColor: "#cfc9bd",
   /** True once the player has requested to end prep early / start moving. */
   taunting: false,
+  /** Geometric: the Hunter's view cone is physically on the player right now
+   *  (independent of camo — drives the Nerve Engine's "being watched" tension). */
+  inCone: false,
+  /** Seconds remaining of a Nerve break — a flinch that forces you detectable. */
+  nerveBreak: 0,
 };
 
 export function resetShared() {
@@ -25,4 +30,6 @@ export function resetShared() {
   shared.coverage = 0;
   shared.nearestSurfaceColor = "#cfc9bd";
   shared.taunting = false;
+  shared.inCone = false;
+  shared.nerveBreak = 0;
 }
