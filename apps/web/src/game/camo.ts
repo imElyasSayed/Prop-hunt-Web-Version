@@ -2,25 +2,41 @@
 // avatar's dominant color blends into it.
 import * as THREE from "three";
 import { PROPS, FLOOR_COLOR } from "./constants";
+import type { PropDef } from "./types";
 import { colorMatch, averageHex } from "./color";
 
 const tmp = new THREE.Vector3();
 
-/** Returns the color of the nearest prop within reach, else the floor color. */
-export function nearestSurfaceColor(pos: THREE.Vector3): string {
-  let best: string = FLOOR_COLOR;
-  let bestDist = 3.6; // must be reasonably close to "back against" a prop
+/** Horizontal edge-distance from a point to a prop's footprint (0 if inside). */
+export function propEdgeDist(
+  pos: { x: number; z: number },
+  p: PropDef,
+): number {
+  const dx = Math.abs(pos.x - p.position[0]) - p.size[0] / 2;
+  const dz = Math.abs(pos.z - p.position[2]) - p.size[2] / 2;
+  return Math.hypot(Math.max(0, dx), Math.max(0, dz));
+}
+
+/** The nearest prop (by footprint edge) and that distance, or null if far off. */
+export function nearestProp(
+  pos: { x: number; z: number },
+  maxDist = 3.6,
+): { prop: PropDef; dist: number } | null {
+  let best: PropDef | null = null;
+  let bestDist = maxDist;
   for (const p of PROPS) {
-    // horizontal distance to prop centre, minus half its footprint
-    const dx = Math.abs(pos.x - p.position[0]) - p.size[0] / 2;
-    const dz = Math.abs(pos.z - p.position[2]) - p.size[2] / 2;
-    const d = Math.hypot(Math.max(0, dx), Math.max(0, dz));
+    const d = propEdgeDist(pos, p);
     if (d < bestDist) {
       bestDist = d;
-      best = p.color;
+      best = p;
     }
   }
-  return best;
+  return best ? { prop: best, dist: bestDist } : null;
+}
+
+/** Returns the color of the nearest prop within reach, else the floor color. */
+export function nearestSurfaceColor(pos: THREE.Vector3): string {
+  return nearestProp(pos)?.prop.color ?? FLOOR_COLOR;
 }
 
 /**

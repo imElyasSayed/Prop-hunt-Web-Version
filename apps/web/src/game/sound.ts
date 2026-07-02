@@ -143,6 +143,47 @@ export function win() {
   });
 }
 
+/** Airy inward whoosh as the blob collapses into a fold. */
+export function foldIn() {
+  const c = ac();
+  if (!c) return;
+  const src = c.createBufferSource();
+  src.buffer = noiseBuffer(c, 0.35);
+  const bp = c.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(1800, c.currentTime);
+  bp.frequency.exponentialRampToValueAtTime(400, c.currentTime + 0.3);
+  bp.Q.value = 1.2;
+  src.connect(bp);
+  env(bp, 0.16, 0.03, 0.3);
+  src.start();
+  src.stop(c.currentTime + 0.36);
+}
+
+/** Springy "pop" as the blob unfolds back to normal. */
+export function foldPop() {
+  const c = ac();
+  if (!c) return;
+  const o = c.createOscillator();
+  o.type = "triangle";
+  o.frequency.setValueAtTime(240, c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(900, c.currentTime + 0.09);
+  o.frequency.exponentialRampToValueAtTime(520, c.currentTime + 0.2);
+  env(o, 0.3, 0.004, 0.2);
+  o.start();
+  o.stop(c.currentTime + 0.24);
+  // wet lip-smack tail
+  const src = c.createBufferSource();
+  src.buffer = noiseBuffer(c, 0.08);
+  const hp = c.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 1200;
+  src.connect(hp);
+  env(hp, 0.18, 0.002, 0.07);
+  src.start(c.currentTime + 0.02);
+  src.stop(c.currentTime + 0.12);
+}
+
 /** Soft UI click. */
 export function click() {
   const c = ac();

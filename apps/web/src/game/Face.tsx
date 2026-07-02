@@ -82,6 +82,9 @@ export function SplotchyFace() {
       material.needsUpdate = true;
       current.current = expr;
     }
+    // Fade the eyes out with the blob as it folds into a prop, so a folded
+    // hider doesn't give itself away with two floating eyeballs.
+    material.opacity = 1 - shared.foldProgress * 0.95;
   });
 
   // Placed on the upper-front of the blob, facing +Z (toward the camera).

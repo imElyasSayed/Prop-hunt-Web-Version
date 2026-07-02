@@ -145,6 +145,36 @@ function PaintMeter() {
   );
 }
 
+function FoldMeter() {
+  const charge = useGame((s) => s.foldCharge);
+  const folded = useGame((s) => s.folded);
+  const pct = Math.round(charge * 100);
+  const low = charge < 0.2;
+  return (
+    <div style={styles.foldWrap}>
+      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3, color: "#222" }}>
+        FOLD{" "}
+        <b style={{ color: folded ? "#8a4cff" : low ? "#d23" : "#555" }}>
+          {folded ? "HIDDEN as prop 🫥" : "hold F / Space near a prop"}
+        </b>
+      </div>
+      <div style={styles.foldTrack}>
+        <div
+          style={{
+            ...styles.foldFill,
+            width: `${pct}%`,
+            background: folded
+              ? "linear-gradient(90deg,#8a4cff,#0fd4e6)"
+              : low
+                ? "#ff5b5b"
+                : "linear-gradient(90deg,#b4f531,#0fd4e6)",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function TauntButton() {
   const [cooling, setCooling] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -221,6 +251,7 @@ export function HUD() {
             <li><b>🎯 sample</b> a prop&apos;s exact color, then paint to match it</li>
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
+            <li><b>Hold F / Space</b> near a prop in the hunt — <b>fold</b> into its outline</li>
           </ul>
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
@@ -277,6 +308,7 @@ export function HUD() {
       <div style={styles.bottomLeft}>
         <CamoMeter />
         {isPrep && <PaintMeter />}
+        {!isPrep && <FoldMeter />}
       </div>
 
       {isPrep && (
@@ -292,7 +324,7 @@ export function HUD() {
         <div style={styles.bottomCenter}>
           <TauntButton />
           <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
-            Taunt to bait the Hunter — risky!
+            Taunt to bait the Hunter — risky! · Hold <b>F</b> near a prop to <b>fold</b> away
           </div>
         </div>
       )}
@@ -385,6 +417,9 @@ const styles: Record<string, React.CSSProperties> = {
   paintWrap: { background: "#fffe", borderRadius: 12, padding: "8px 12px", width: 260, boxShadow: "0 4px 16px #0002" },
   paintTrack: { height: 10, background: "#e6e6ea", borderRadius: 999, overflow: "hidden" },
   paintFill: { height: "100%", background: "linear-gradient(90deg,#0fd4e6,#8a4cff)", borderRadius: 999, transition: "width 0.1s" },
+  foldWrap: { background: "#fffe", borderRadius: 12, padding: "8px 12px", width: 260, boxShadow: "0 4px 16px #0002" },
+  foldTrack: { height: 10, background: "#e6e6ea", borderRadius: 999, overflow: "hidden" },
+  foldFill: { height: "100%", borderRadius: 999, transition: "width 0.08s, background 0.2s" },
   palette: { background: "#fffe", borderRadius: 14, padding: "10px 14px", boxShadow: "0 4px 16px #0002" },
   swatchRow: { display: "flex", gap: 8, justifyContent: "center" },
   swatch: { width: 30, height: 30, borderRadius: 8, border: "none", cursor: "pointer", transition: "transform 0.1s" },

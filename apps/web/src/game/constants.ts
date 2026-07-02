@@ -43,6 +43,16 @@ export const HUNTER_SUSPICION_TO_TAG = 1.4; // seconds at full mismatch
 // Below this match [0..1] against the nearest surface, you read as "wrong".
 export const CAMO_SAFE_THRESHOLD = 0.6;
 
+// ---- Silhouette Fold (flagship ability) ----
+// Hold the fold key near a prop to collapse your blob's silhouette into that
+// prop's outline: near-invisible, but movement-locked and on a finite charge.
+export const FOLD_NEAR_DIST = 2.4;   // must be this close to a prop to fold into it
+export const FOLD_TO_FULL = 0.9;     // seconds of holding to reach a full fold
+export const FOLD_HIDDEN_AT = 0.55;  // fold progress at which you read as hidden
+export const FOLD_MAX_CHARGE = 4.5;  // seconds of folded time on a full charge
+export const FOLD_DRAIN_PER_SEC = 1; // charge drained per second while folded
+export const FOLD_RECHARGE_PER_SEC = 0.55; // charge regained per second unfolded
+
 // The single Canvas (map) shipped in the base game: "The Studio".
 // `position` is the collision-box CENTER; models (origin at their base) are
 // placed on the floor at [x, 0, z] since centerY == height/2 for every prop.

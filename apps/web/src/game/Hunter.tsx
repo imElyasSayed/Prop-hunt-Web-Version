@@ -70,7 +70,9 @@ export function Hunter() {
       shared.coverage,
       shared.nearestSurfaceColor,
     );
-    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
+    // A fully folded blob reads as furniture — near-invisible to the Hunter.
+    const detectable =
+      !shared.folded && (camo < CAMO_SAFE_THRESHOLD || shared.taunting);
     const watched = inCone && detectable;
 
     setWatched(watched);

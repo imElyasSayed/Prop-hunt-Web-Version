@@ -21,6 +21,10 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Silhouette Fold charge remaining, 0..1 (seconds of fold left / max). */
+  foldCharge: number;
+  /** True while the player is currently folded (hidden as a prop). */
+  folded: boolean;
 
   // ---- actions ----
   startPrep: () => void;
@@ -32,6 +36,7 @@ interface GameState {
   setCamoScore: (s: number) => void;
   setSurfaceColor: (c: string) => void;
   setWatched: (w: boolean) => void;
+  setFold: (charge: number, folded: boolean) => void;
   splatPlayer: () => void;
   survive: () => void;
   reset: () => void;
@@ -52,6 +57,8 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  foldCharge: 1,
+  folded: false,
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +71,8 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      foldCharge: 1,
+      folded: false,
     });
   },
 
@@ -110,6 +119,7 @@ export const useGame = create<GameState>((set, get) => ({
   setCamoScore: (s) => set({ camoScore: s }),
   setSurfaceColor: (c) => set({ surfaceColor: c }),
   setWatched: (w) => set({ beingWatched: w }),
+  setFold: (charge, folded) => set({ foldCharge: charge, folded }),
 
   splatPlayer: () => {
     const s = get();

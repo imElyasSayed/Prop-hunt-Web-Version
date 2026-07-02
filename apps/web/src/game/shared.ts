@@ -15,6 +15,10 @@ export const shared = {
   nearestSurfaceColor: "#cfc9bd",
   /** True once the player has requested to end prep early / start moving. */
   taunting: false,
+  /** Silhouette Fold: 0 = normal blob, 1 = fully collapsed into a prop outline. */
+  foldProgress: 0,
+  /** True once folded far enough to read as hidden from the Hunter. */
+  folded: false,
 };
 
 export function resetShared() {
@@ -25,4 +29,6 @@ export function resetShared() {
   shared.coverage = 0;
   shared.nearestSurfaceColor = "#cfc9bd";
   shared.taunting = false;
+  shared.foldProgress = 0;
+  shared.folded = false;
 }
