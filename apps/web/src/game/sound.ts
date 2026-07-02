@@ -75,10 +75,16 @@ export function spray() {
   src.stop(c.currentTime + 0.13);
 }
 
+// Silent Round (Rift mutator): mutes the "forced" cues (taunt whistle + spot blip).
+let silent = false;
+export function setSilent(b: boolean) {
+  silent = b;
+}
+
 /** Whistle taunt — a rising then falling tone. */
 export function whistle() {
   const c = ac();
-  if (!c) return;
+  if (!c || silent) return;
   const o = c.createOscillator();
   o.type = "sine";
   o.frequency.setValueAtTime(900, c.currentTime);
@@ -117,7 +123,7 @@ export function splat() {
 /** Alert blip when the Hunter first spots you. */
 export function spotted() {
   const c = ac();
-  if (!c) return;
+  if (!c || silent) return;
   const o = c.createOscillator();
   o.type = "square";
   o.frequency.setValueAtTime(660, c.currentTime);
@@ -139,6 +145,39 @@ export function win() {
     if (g) {
       o.start(c.currentTime + i * 0.12);
       o.stop(c.currentTime + i * 0.12 + 0.35);
+    }
+  });
+}
+
+/** Ratcheting whir while the Rift wheel spins. */
+export function riftSpin() {
+  const c = ac();
+  if (!c) return;
+  const o = c.createOscillator();
+  o.type = "square";
+  o.frequency.setValueAtTime(200, c.currentTime);
+  o.frequency.linearRampToValueAtTime(90, c.currentTime + 2.4);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 900;
+  o.connect(lp);
+  env(lp, 0.1, 0.05, 2.4);
+  o.start();
+  o.stop(c.currentTime + 2.5);
+}
+
+/** Bright ding when the wheel locks a mutator. */
+export function riftLock() {
+  const c = ac();
+  if (!c) return;
+  [784, 1175].forEach((f, i) => {
+    const o = c.createOscillator();
+    o.type = "triangle";
+    o.frequency.value = f;
+    const g = env(o, 0.3, 0.005, 0.3);
+    if (g) {
+      o.start(c.currentTime + i * 0.06);
+      o.stop(c.currentTime + i * 0.06 + 0.34);
     }
   });
 }

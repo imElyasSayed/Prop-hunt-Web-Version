@@ -3,6 +3,7 @@
 // scene components, NOT here — the store only holds discrete/UI-facing state.
 import { create } from "zustand";
 import type { GamePhase, RoundOutcome, Stamp } from "./types";
+import type { RiftId } from "./rift";
 import { PAINT_BUDGET, PALETTE, PREP_SECONDS } from "./constants";
 
 interface GameState {
@@ -21,8 +22,14 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Rift Modifier Wheel: the currently-locked public mutator (null = none). */
+  activeRift: RiftId | null;
+  /** True while the wheel is mid-spin (before it locks a mutator). */
+  riftSpinning: boolean;
 
   // ---- actions ----
+  setRift: (r: RiftId | null) => void;
+  setRiftSpinning: (b: boolean) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +59,11 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  activeRift: null,
+  riftSpinning: false,
+
+  setRift: (r) => set({ activeRift: r }),
+  setRiftSpinning: (b) => set({ riftSpinning: b }),
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +76,8 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      activeRift: null,
+      riftSpinning: false,
     });
   },
 

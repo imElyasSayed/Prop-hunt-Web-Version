@@ -14,6 +14,8 @@ import { shared } from "./shared";
 import type { Keys } from "./useKeys";
 import { PLAYER_SPEED, PLAYER_RADIUS } from "./constants";
 
+const WHITE = new THREE.Color(0xffffff);
+
 export function Player({ keys }: { keys: RefObject<Keys> }) {
   const group = useRef<THREE.Group>(null);
   const blob = useRef<THREE.Object3D>(null);
@@ -21,6 +23,7 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
   const lastUV = useRef<{ u: number; v: number } | null>(null);
   const camoThrottle = useRef(0);
   const lastSpray = useRef(0);
+  const mirrorCol = useRef(new THREE.Color());
 
   const stamps = useGame((s) => s.stamps);
   const phase = useGame((s) => s.phase);
@@ -71,6 +74,8 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
     const g = group.current;
     if (!g) return;
     const k = keys.current;
+    const rift = useGame.getState().activeRift;
+    const t = state.clock.elapsedTime;
 
     // --- movement (world-axis, camera looks down -Z) ---
     if (phase === "prep" || phase === "hunt") {
@@ -82,8 +87,10 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
       if (k.right) mx += 1;
       if (mx || mz) {
         const len = Math.hypot(mx, mz);
-        const nx = g.position.x + (mx / len) * PLAYER_SPEED * dt;
-        const nz = g.position.z + (mz / len) * PLAYER_SPEED * dt;
+        // Rift: Low Gravity makes the blob nippier.
+        const speed = PLAYER_SPEED * (rift === "lowgrav" ? 1.2 : 1);
+        const nx = g.position.x + (mx / len) * speed * dt;
+        const nz = g.position.z + (mz / len) * speed * dt;
         const [cx, cz] = collide(nx, nz, PLAYER_RADIUS);
         g.position.x = cx;
         g.position.z = cz;
@@ -97,13 +104,30 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
       if (k.spinR) blob.current.rotation.y -= dt * 2.2;
     }
 
+    // --- Rift: Low Gravity floats the blob up in a gentle bob ---
+    if (blob.current) {
+      const targetY = rift === "lowgrav" ? 0.15 + Math.sin(t * 4) * 0.12 : 0;
+      blob.current.position.y += (targetY - blob.current.position.y) * 0.12;
+    }
+
     // --- camo scoring (throttled push to store for the HUD) ---
     const { color, coverage } = getDominant();
-    shared.playerColor = color;
-    shared.coverage = coverage;
     const surf = nearestSurfaceColor(shared.playerPos);
+    // --- Rift: Mirror Morph auto-copies the surface you're touching ---
+    let ecolor = color;
+    let ecoverage = coverage;
+    if (rift === "mirror") {
+      ecolor = surf;
+      ecoverage = 1;
+      mirrorCol.current.set(surf);
+      paintMat.color.lerp(mirrorCol.current, 0.12);
+    } else {
+      paintMat.color.lerp(WHITE, 0.12);
+    }
+    shared.playerColor = ecolor;
+    shared.coverage = ecoverage;
     shared.nearestSurfaceColor = surf;
-    const score = scoreCamo(color, coverage, surf);
+    const score = scoreCamo(ecolor, ecoverage, surf);
     camoThrottle.current += dt;
     if (camoThrottle.current > 0.15) {
       camoThrottle.current = 0;

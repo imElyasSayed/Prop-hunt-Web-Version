@@ -5,6 +5,7 @@ import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
 import * as sfx from "./sound";
+import { RiftWheel } from "./RiftWheel";
 import {
   PALETTE,
   PAINT_BUDGET,
@@ -221,6 +222,7 @@ export function HUD() {
             <li><b>🎯 sample</b> a prop&apos;s exact color, then paint to match it</li>
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
+            <li>🎡 The <b>Rift Wheel</b> spins mid-hunt — everyone plays under the same public mutator</li>
           </ul>
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
@@ -273,6 +275,8 @@ export function HUD() {
           )}
         </div>
       </div>
+
+      <RiftWheel />
 
       <div style={styles.bottomLeft}>
         <CamoMeter />

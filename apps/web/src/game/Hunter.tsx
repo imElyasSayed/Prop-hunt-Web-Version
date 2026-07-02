@@ -57,6 +57,8 @@ export function Hunter() {
       return;
     }
 
+    const rift = useGame.getState().activeRift;
+
     const pos = g.position;
     const toPlayer = new THREE.Vector3().subVectors(shared.playerPos, pos);
     toPlayer.y = 0;
@@ -80,9 +82,11 @@ export function Hunter() {
       const mismatch = shared.taunting
         ? 1
         : Math.max(0.15, (CAMO_SAFE_THRESHOLD - camo) / CAMO_SAFE_THRESHOLD);
+      // Rift: Double Gaze makes the stare bite twice as fast.
+      const gaze = rift === "doublegaze" ? 2 : 1;
       suspicion.current = Math.min(
         1,
-        suspicion.current + (mismatch * dt) / HUNTER_SUSPICION_TO_TAG,
+        suspicion.current + (mismatch * gaze * dt) / HUNTER_SUSPICION_TO_TAG,
       );
       lastSeen.current.copy(shared.playerPos);
     } else {
@@ -118,7 +122,9 @@ export function Hunter() {
       }
       // face the target (not the sidestep) so it still looks like it's hunting
       dir.current.lerp(desired, 0.12).normalize();
-      const speed = watched ? HUNTER_SPEED * 1.15 : HUNTER_SPEED;
+      // Rift: Speed Seekers boosts the Hunter's pace by 50%.
+      const riftBoost = rift === "speedseekers" ? 1.5 : 1;
+      const speed = (watched ? HUNTER_SPEED * 1.15 : HUNTER_SPEED) * riftBoost;
       const step = speed * dt;
       const [cx, cz] = collide(pos.x + moveDir.x * step, pos.z + moveDir.z * step, 0.62);
       const moved = Math.hypot(cx - pos.x, cz - pos.z);
