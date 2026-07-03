@@ -204,8 +204,13 @@ function SpectatePanel({ onExit }: { onExit: () => void }) {
   return (
     <div style={styles.spectatePanel}>
       <div style={styles.spectateHead}>
-        <b style={{ fontSize: 16, fontFamily: "var(--font-baloo), system-ui" }}>🎬 Ghost Director</b>
-        <span style={{ fontSize: 11, opacity: 0.65 }}>drag to look · scroll to zoom</span>
+        <b style={{ fontSize: 16, fontFamily: "var(--font-baloo), system-ui", display: "flex", alignItems: "center", gap: 6 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/art/clapperboard.svg" alt="" style={{ width: 24, height: 24 }} />
+          Ghost Director
+        </b>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/art/freecam-hint.svg" alt="drag to look, scroll to zoom" title="drag to look · scroll to zoom" style={{ width: 30, height: 30, opacity: 0.8 }} />
       </div>
       <div style={styles.clipList}>
         {clip.events.map((e, i) => (
