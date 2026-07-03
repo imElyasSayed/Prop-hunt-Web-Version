@@ -1,12 +1,13 @@
 // Dead Man's Tell scene component: ticks the distress clock, raises the flare
 // on a tag, and renders the ~4s distress flash + the ~20s paint-stain graves.
 "use client";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { distressPulse } from "./sound";
+import { useArtTexture } from "./artTexture";
 import { distress, raiseFlare, DISTRESS_FLASH } from "./distress";
 
 const GRAVE_POOL = 4; // MP-ready pool; SP uses one
@@ -39,6 +40,28 @@ export function DeadMansTell() {
     [],
   );
 
+  // Design Vol.5 art: distress alarm ring + paint-stain grave.
+  const ringTex = useArtTexture("/art/distress-ring.svg", 256);
+  const graveTex = useArtTexture("/art/grave-stain.svg", 256);
+  useEffect(() => {
+    if (ringTex) {
+      flashMat.map = ringTex;
+      flashMat.color.set("#ffffff");
+      flashMat.needsUpdate = true;
+    }
+  }, [ringTex, flashMat]);
+  useEffect(() => {
+    if (!graveTex) return;
+    for (const m of graves.current) {
+      if (m) {
+        const gm = m.material as THREE.MeshBasicMaterial;
+        gm.map = graveTex;
+        gm.color.set("#ffffff");
+        gm.needsUpdate = true;
+      }
+    }
+  }, [graveTex]);
+
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05);
     distress.clock += dt;
@@ -69,8 +92,7 @@ export function DeadMansTell() {
         const r = 0.6 + t * 2.4;
         fMesh.scale.setScalar(r);
         fMesh.position.set(distress.flashPos.x, 0.05, distress.flashPos.z);
-        flashMat.color.set(distress.flashColor);
-        flashMat.opacity = 0.6 * (1 - t) * (0.6 + 0.4 * Math.abs(Math.sin(distress.clock * 12)));
+        flashMat.opacity = 0.85 * (1 - t) * (0.6 + 0.4 * Math.abs(Math.sin(distress.clock * 12)));
       }
     }
 
@@ -93,9 +115,9 @@ export function DeadMansTell() {
 
   return (
     <group>
-      {/* distress flash ring at the death spot */}
+      {/* distress alarm ring at the death spot (Design Vol.5) */}
       <mesh ref={flash} material={flashMat} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.72, 1, 40]} />
+        <planeGeometry args={[2, 2]} />
       </mesh>
       {/* grave-stain pool (each its own material clone for independent fade) */}
       {Array.from({ length: GRAVE_POOL }).map((_, i) => (
@@ -108,7 +130,7 @@ export function DeadMansTell() {
           rotation={[-Math.PI / 2, 0, 0]}
           visible={false}
         >
-          <circleGeometry args={[1.1, 24]} />
+          <planeGeometry args={[2.4, 2.4]} />
         </mesh>
       ))}
     </group>

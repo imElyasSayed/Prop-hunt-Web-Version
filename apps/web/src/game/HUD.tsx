@@ -255,6 +255,8 @@ export function HUD() {
           </div>
           {!survived && (
             <div style={styles.tellLine}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/art/sole-survivor.svg" alt="Sole Survivor" style={{ width: 46, height: 46, float: "right", marginLeft: 8 }} />
               ⚑ Your <b>Dead Man&apos;s Tell</b> flared — a distress pulse rang out and a
               20s grave stain marks the spot. In a squad, living partners who outlast it
               bank a <b>Sole Survivor</b> bonus.
