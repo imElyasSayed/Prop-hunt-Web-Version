@@ -171,11 +171,30 @@ function TauntButton() {
   );
 }
 
-const EMOTE_CHIP: Record<string, string> = {
-  peel: "/art/emote-peel-chip.svg",
-  melt: "/art/emote-melt-chip.svg",
-  confetti: "/art/emote-confetti-chip.svg",
+// The equipped-emote chip = frame 0 of the sprite sheet (2048×256 = 8 frames),
+// cropped via a CSS background-sprite so it isn't squished into one <img>.
+const EMOTE_SHEET: Record<string, string> = {
+  peel: "/art/emote-peel.png",
+  melt: "/art/emote-melt.png",
+  confetti: "/art/emote-confetti.png",
 };
+
+function EmoteChip({ id, size }: { id: string; size: number }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        display: "block",
+        width: size,
+        height: size,
+        backgroundImage: `url(${EMOTE_SHEET[id]})`,
+        backgroundSize: `${size * 8}px ${size}px`, // 8 frames wide
+        backgroundPosition: "0 0", // first frame
+        backgroundRepeat: "no-repeat",
+      }}
+    />
+  );
+}
 
 function EmotePicker() {
   const equipped = useGame((s) => s.equippedEmote);
@@ -203,8 +222,7 @@ function EmotePicker() {
                 borderColor: on ? "#191225" : "#e0d8ef",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={EMOTE_CHIP[e.id]} alt="" width={30} height={30} style={{ display: "block" }} />
+              <EmoteChip id={e.id} size={30} />
               <span style={{ fontSize: 10, fontWeight: 800 }}>{e.label}</span>
             </button>
           );
@@ -237,8 +255,7 @@ function EmoteButton() {
       title={emote.blurb}
       style={{ ...styles.emoteBtn, opacity: used ? 0.4 : 1, background: used ? "#bbb" : emote.color, display: "flex", alignItems: "center", gap: 8 }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={EMOTE_CHIP[equipped]} alt="" width={22} height={22} style={{ display: "block" }} />
+      <EmoteChip id={equipped} size={22} />
       {used ? "EMOTE USED" : "BREAK COVER"}
     </button>
   );
