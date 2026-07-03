@@ -166,6 +166,8 @@ function EscalationMeter() {
   return (
     <div style={styles.escWrap}>
       <div style={styles.escLabel}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/art/seeker-heat.svg" alt="" style={{ width: 16, height: 16, verticalAlign: "-3px", marginRight: 4 }} />
         SEEKER HEAT <b style={{ color: s.hard ? "#ff2e4f" : "#ff7a17" }}>{s.hard ? "REVEAL!" : `${pct}%`}</b>
       </div>
       <div style={styles.escTrack}>
@@ -186,6 +188,7 @@ function ensureWhistleKeyframes() {
   el.textContent = `
     @keyframes splotchRipple { 0%{transform:scale(0.4);opacity:0.9} 100%{transform:scale(1.6);opacity:0} }
     @keyframes splotchFade { 0%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+    @keyframes splotchReticle { 0%{transform:scale(1.4) rotate(-8deg);opacity:0} 30%{opacity:1} 100%{transform:scale(1) rotate(0);opacity:0.9} }
   `;
   document.head.appendChild(el);
 }
@@ -232,6 +235,29 @@ function VisualWhistle() {
     <div key={caption.key} style={styles.whistleWrap} aria-live="polite">
       <span style={{ ...styles.whistleRipple, borderColor: caption.tone }} />
       <span style={{ ...styles.whistleCaption, background: caption.tone }}>{caption.text}</span>
+    </div>
+  );
+}
+
+// Second Look inspect reticle (Design Vol.4) — appears over the scene while the
+// Hunter commits to a close inspect; hold still & blend to survive it.
+function InspectReticle() {
+  const [on, setOn] = useState(false);
+  useEffect(ensureWhistleKeyframes, []);
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      setOn((p) => (p === seeker.inspecting ? p : seeker.inspecting));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  if (!on) return null;
+  return (
+    <div style={styles.reticleWrap} aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/art/seeker-reticle.svg" alt="" style={styles.reticleImg} />
     </div>
   );
 }
@@ -366,6 +392,7 @@ export function HUD() {
         </div>
       </div>
 
+      {!isPrep && <InspectReticle />}
       {!isPrep && <VisualWhistle />}
 
       <div style={styles.bottomLeft}>
@@ -472,6 +499,8 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: 8,
   },
+  reticleWrap: { position: "absolute", top: "42%", left: "50%", transform: "translate(-50%,-50%)", pointerEvents: "none" },
+  reticleImg: { width: 180, height: 180, animation: "splotchReticle 1.1s ease-out" },
   escWrap: { background: "#fffe", borderRadius: 12, padding: "8px 12px", width: 260, boxShadow: "0 4px 16px #0002" },
   escLabel: { fontSize: 12, fontWeight: 700, marginBottom: 5, color: "#222" },
   escTrack: { height: 10, background: "#e6e6ea", borderRadius: 999, overflow: "hidden" },
