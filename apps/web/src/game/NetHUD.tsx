@@ -110,8 +110,17 @@ export function NetHUD() {
               fontWeight: r.id === myId ? 800 : 600,
             }}
           >
-            <span>
-              {r.role === "hunter" ? "🎯" : r.alive ? "🫥" : "💥"} {r.name}
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={r.role === "hunter" ? "/art/role-hunter.svg" : "/art/role-chameleon.svg"}
+                alt=""
+                width={18}
+                height={18}
+                style={{ display: "block", opacity: r.alive ? 1 : 0.5 }}
+              />
+              {r.name}
+              {!r.alive && " 💥"}
             </span>
             <span>{r.score}</span>
           </div>
@@ -147,14 +156,24 @@ export function NetHUD() {
       {(phase === "lobby" || phase === "result") && (
         <div style={styles.center}>
           <div style={styles.card}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/art/vs-splat.svg" alt="" width={72} height={48} style={{ display: "block", margin: "0 auto 4px" }} />
             <h1 style={styles.big}>
               {phase === "result" ? "ROUND OVER" : "WAITING…"}
             </h1>
             <div style={styles.board2}>
               {roster.map((r) => (
                 <div key={r.id} style={styles.boardRow}>
-                  <span>
-                    {r.role === "hunter" ? "🎯" : "🫥"} {r.name}
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={r.role === "hunter" ? "/art/role-hunter.svg" : "/art/role-chameleon.svg"}
+                      alt=""
+                      width={18}
+                      height={18}
+                      style={{ display: "block" }}
+                    />
+                    {r.name}
                   </span>
                   <span>{r.score}</span>
                 </div>

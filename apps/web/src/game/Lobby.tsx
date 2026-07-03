@@ -80,16 +80,25 @@ export function Lobby({ onBack }: { onBack: () => void }) {
   return (
     <div style={styles.center}>
       <div style={styles.card}>
-        <div style={styles.codeLabel}>ROOM CODE</div>
-        <div style={styles.code}>{roomCode}</div>
+        <div style={styles.codePlate}>
+          <span style={styles.codeText}>{roomCode}</span>
+        </div>
         <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 10 }}>
           Share this code — friends join from the same screen.
         </div>
         <div style={styles.roster}>
           {roster.map((r) => (
             <div key={r.id} style={styles.rosterRow}>
-              <span>
-                {r.role === "hunter" ? "🎯" : "🫥"} {r.name}
+              <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={r.role === "hunter" ? "/art/role-hunter.svg" : "/art/role-chameleon.svg"}
+                  alt=""
+                  width={22}
+                  height={22}
+                  style={{ display: "block" }}
+                />
+                {r.name}
                 {r.id === myId && " (you)"}
               </span>
               <span style={{ opacity: 0.6, fontSize: 12 }}>{r.role}</span>
@@ -195,13 +204,24 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   codeLabel: { fontSize: 12, opacity: 0.6, letterSpacing: 2, fontWeight: 800 },
-  code: {
-    fontSize: 52,
+  codePlate: {
+    width: 260,
+    height: 97,
+    margin: "0 auto 6px",
+    backgroundImage: "url(/art/roomcode-plate.svg)",
+    backgroundSize: "100% 100%",
+    backgroundRepeat: "no-repeat",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  codeText: {
+    fontSize: 46,
     fontWeight: 800,
-    letterSpacing: 6,
+    letterSpacing: 8,
     color: "#191225",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
-    margin: "2px 0 6px",
+    paddingTop: 18,
   },
   roster: {
     background: "#faf8ff",
