@@ -2,13 +2,14 @@
 // floor line and the sweeping wet-paint wall. Force-recolors the player when
 // the wall passes over them, and re-tints crossed prop surfaces.
 "use client";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { PROPS, ROOM_HALF } from "./constants";
 import { tideSweep } from "./sound";
+import { useArtTexture } from "./artTexture";
 import {
   tide,
   armTide,
@@ -43,6 +44,26 @@ export function PaintTide() {
       new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.55, toneMapped: false }),
     [],
   );
+
+  // Design Vol.5 art: foam on the wet wall, glowing dashed edge on the telegraph.
+  const foamTex = useArtTexture("/art/tide-foam.svg", 256);
+  const telegraphTex = useArtTexture("/art/tide-telegraph.svg", 256);
+  useEffect(() => {
+    if (foamTex) {
+      foamTex.wrapS = foamTex.wrapT = THREE.RepeatWrapping;
+      foamTex.repeat.set(6, 1);
+      wallMat.map = foamTex;
+      wallMat.needsUpdate = true;
+    }
+  }, [foamTex, wallMat]);
+  useEffect(() => {
+    if (telegraphTex) {
+      telegraphTex.wrapS = telegraphTex.wrapT = THREE.RepeatWrapping;
+      telegraphTex.repeat.set(8, 1);
+      lineMat.map = telegraphTex;
+      lineMat.needsUpdate = true;
+    }
+  }, [telegraphTex, lineMat]);
 
   useFrame((_, dtRaw) => {
     const wallMesh = wall.current;
