@@ -7,7 +7,7 @@ import { Suspense, useRef } from "react";
 import { Room } from "./Room";
 import { Player } from "./Player";
 import { Hunter } from "./Hunter";
-import { AmbientDecals, EliminationSplat } from "./Decals";
+import { MapDecals, EliminationSplat } from "./Decals";
 import { useKeys } from "./useKeys";
 import { useGame } from "./store";
 import { shared } from "./shared";
@@ -71,7 +71,7 @@ export function Scene() {
       <GameClock />
       <Suspense fallback={null}>
         <Room />
-        <AmbientDecals />
+        <MapDecals />
         <EliminationSplat />
         <Player keys={keys} />
         <Hunter />

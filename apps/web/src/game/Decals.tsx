@@ -4,7 +4,8 @@
 import { useEffect, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
-import { DECALS, useDecalTexture, type DecalName } from "./decalTextures";
+import { DECALS, useDecalTexture, useSvgTextures, type DecalName } from "./decalTextures";
+import { activeMap } from "./maps";
 
 /** A paint decal laid flat on the floor. */
 export function FloorDecal({
@@ -87,6 +88,50 @@ export function AmbientDecals() {
       <FloorDecal name="puddle" x={-9} z={-7} width={2.8} rotation={1.7} opacity={0.75} />
       <WallDecal name="wallDrip" position={[-2, 1.4, -11.9]} rotationY={0} width={1.8} opacity={0.9} />
       <WallDecal name="wallDrip" position={[11.9, 1.7, 2]} rotationY={-Math.PI / 2} width={2.1} opacity={0.85} />
+    </group>
+  );
+}
+
+// Fixed open-floor scatter for per-map decals [x, z, width, rotation].
+const MAP_DECAL_SPOTS: [number, number, number, number][] = [
+  [-3, 2, 2.6, 0.5],
+  [4.5, -2, 2.8, -0.4],
+  [9, -8, 2.2, 2.1],
+  [-8, 9, 2.4, 1.2],
+  [-9, -7, 2.2, 1.7],
+  [2, 9, 2.4, -1.1],
+  [7, 4, 2.0, 0.3],
+  [-2, -9, 2.2, 2.6],
+];
+
+/** Themed floor decals for the active Canvas (SPLOTCH Design Vol.4). Re-renders
+ * when the map changes; cycles the map's 4 decal textures across the scatter. */
+export function MapDecals() {
+  const mapId = useGame((s) => s.mapId);
+  const map = activeMap();
+  const texs = useSvgTextures(map.decals);
+  return (
+    <group key={mapId}>
+      {MAP_DECAL_SPOTS.map(([x, z, w, rot], i) => {
+        const tex = texs[i % texs.length];
+        if (!tex) return null;
+        return (
+          <group key={i} position={[x, 0.012, z]} rotation={[0, rot, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[w, w]} />
+              <meshBasicMaterial
+                map={tex}
+                transparent
+                depthWrite={false}
+                polygonOffset
+                polygonOffsetFactor={-2}
+                opacity={0.85}
+                toneMapped={false}
+              />
+            </mesh>
+          </group>
+        );
+      })}
     </group>
   );
 }

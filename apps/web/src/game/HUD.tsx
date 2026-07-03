@@ -131,7 +131,8 @@ function MapPicker() {
                 transform: on ? "translateY(-2px)" : "none",
               }}
             >
-              <span style={{ ...styles.mapSwatch, background: `linear-gradient(135deg, ${m.floorColor}, ${m.wallColor})` }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={m.art} alt={m.name} style={styles.mapSwatch} />
               <span style={styles.mapName}>{m.name}</span>
             </button>
           );
@@ -454,7 +455,7 @@ const styles: Record<string, React.CSSProperties> = {
   mapPicker: { margin: "16px 0 6px", padding: "12px 10px", background: "#faf7f2", borderRadius: 16, border: "2px solid #0001" },
   mapRow: { display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" },
   mapCard: { display: "flex", flexDirection: "column", alignItems: "center", gap: 5, width: 92, padding: "8px 6px", background: "#fff", border: "2px solid #0002", borderRadius: 12, cursor: "pointer" },
-  mapSwatch: { width: 56, height: 34, borderRadius: 8, boxShadow: "inset 0 0 0 1px #0002" },
+  mapSwatch: { width: 66, height: 44, borderRadius: 8, objectFit: "cover", boxShadow: "inset 0 0 0 1px #0002", display: "block" },
   mapName: { fontSize: 11.5, fontWeight: 800, color: "#191225" },
   mapBlurb: { fontSize: 11, opacity: 0.65, marginTop: 8 },
   mapBadge: {

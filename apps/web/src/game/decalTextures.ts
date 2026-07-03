@@ -58,3 +58,22 @@ export function useDecalTexture(name: DecalName): THREE.Texture | null {
   }, [url, aspect]);
   return tex;
 }
+
+/** Load an arbitrary list of square SVG decals (used by per-map floor decals). */
+export function useSvgTextures(urls: string[]): (THREE.Texture | null)[] {
+  const key = urls.join("|");
+  const [texs, setTexs] = useState<(THREE.Texture | null)[]>(() =>
+    urls.map((u) => cache.get(u) ?? null),
+  );
+  useEffect(() => {
+    let alive = true;
+    Promise.all(urls.map((u) => loadDecal(u, 1).catch(() => null))).then((r) => {
+      if (alive) setTexs(r);
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return texs;
+}

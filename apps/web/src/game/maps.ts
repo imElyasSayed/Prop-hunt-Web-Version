@@ -27,11 +27,17 @@ export interface MapDef {
   props: PropDef[];
   /** open-floor Hunter patrol waypoints [x, z]. */
   waypoints: [number, number][];
+  /** map-select card illustration (SPLOTCH Design Vol.4). */
+  art: string;
+  /** 4 themed floor decal SVGs scattered on this Canvas. */
+  decals: string[];
 }
 
 // --- The Studio (the shipped base map) ------------------------------------
 const STUDIO: MapDef = {
   id: "studio",
+  art: "/art/map-studio.svg",
+  decals: ["/art/dec-studio-1.svg","/art/dec-studio-2.svg","/art/dec-studio-3.svg","/art/dec-studio-4.svg"],
   name: "The Studio",
   blurb: "Warm paper tones. The original Canvas.",
   floorColor: FLOOR_COLOR,
@@ -46,6 +52,8 @@ const STUDIO: MapDef = {
 // --- Neon Alley (dark cyberpunk backstreet) -------------------------------
 const NEON_ALLEY: MapDef = {
   id: "neon-alley",
+  art: "/art/map-neonalley.svg",
+  decals: ["/art/dec-neon-1.svg","/art/dec-neon-2.svg","/art/dec-neon-3.svg","/art/dec-neon-4.svg"],
   name: "Neon Alley",
   blurb: "Rain-slick backstreet. Hide among skips, drums and vending glow.",
   floorColor: "#17151f",
@@ -70,6 +78,8 @@ const NEON_ALLEY: MapDef = {
 // --- Toy Box (bright primary-colored playroom) ----------------------------
 const TOY_BOX: MapDef = {
   id: "toy-box",
+  art: "/art/map-toybox.svg",
+  decals: ["/art/dec-toy-1.svg","/art/dec-toy-2.svg","/art/dec-toy-3.svg","/art/dec-toy-4.svg"],
   name: "Toy Box",
   blurb: "Giant blocks and a beach ball. Loud, primary, and forgiving.",
   floorColor: "#ffe6a8",
@@ -94,6 +104,8 @@ const TOY_BOX: MapDef = {
 // --- Backrooms (liminal mono-yellow) --------------------------------------
 const BACKROOMS: MapDef = {
   id: "backrooms",
+  art: "/art/map-backrooms.svg",
+  decals: ["/art/dec-back-1.svg","/art/dec-back-2.svg","/art/dec-back-3.svg","/art/dec-back-4.svg"],
   name: "Backrooms",
   blurb: "Mono-yellow and endless. Match the walls or vanish behind a beam.",
   floorColor: "#a89b3f",
