@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import { MAPS, getMap } from "./maps";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -102,6 +103,41 @@ function PalettePicker() {
           style={{ width: 120 }}
         />
       </div>
+    </div>
+  );
+}
+
+// Map selector — pick 1 of 4 Canvases before starting a round.
+function MapPicker() {
+  const mapId = useGame((s) => s.mapId);
+  const setMap = useGame((s) => s.setMap);
+  return (
+    <div style={styles.mapPicker}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: "#8a4cff", marginBottom: 8 }}>
+        CHOOSE YOUR CANVAS
+      </div>
+      <div style={styles.mapRow}>
+        {MAPS.map((m) => {
+          const on = m.id === mapId;
+          return (
+            <button
+              key={m.id}
+              onClick={() => { sfx.click(); setMap(m.id); }}
+              title={m.blurb}
+              style={{
+                ...styles.mapCard,
+                borderColor: on ? "#191225" : "#0002",
+                boxShadow: on ? "0 4px 0 #8a4cff" : "0 2px 0 #0001",
+                transform: on ? "translateY(-2px)" : "none",
+              }}
+            >
+              <span style={{ ...styles.mapSwatch, background: `linear-gradient(135deg, ${m.floorColor}, ${m.wallColor})` }} />
+              <span style={styles.mapName}>{m.name}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={styles.mapBlurb}>{getMap(mapId).blurb}</div>
     </div>
   );
 }
@@ -222,6 +258,7 @@ export function HUD() {
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
           </ul>
+          <MapPicker />
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
       </div>
@@ -273,6 +310,8 @@ export function HUD() {
           )}
         </div>
       </div>
+
+      <div style={styles.mapBadge}>🖼 {getMap(useGame.getState().mapId).name}</div>
 
       <div style={styles.bottomLeft}>
         <CamoMeter />
@@ -411,6 +450,25 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  mapPicker: { margin: "16px 0 6px", padding: "12px 10px", background: "#faf7f2", borderRadius: 16, border: "2px solid #0001" },
+  mapRow: { display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" },
+  mapCard: { display: "flex", flexDirection: "column", alignItems: "center", gap: 5, width: 92, padding: "8px 6px", background: "#fff", border: "2px solid #0002", borderRadius: 12, cursor: "pointer" },
+  mapSwatch: { width: 56, height: 34, borderRadius: 8, boxShadow: "inset 0 0 0 1px #0002" },
+  mapName: { fontSize: 11.5, fontWeight: 800, color: "#191225" },
+  mapBlurb: { fontSize: 11, opacity: 0.65, marginTop: 8 },
+  mapBadge: {
+    position: "absolute",
+    top: 14,
+    left: "50%",
+    transform: "translate(-50%, 44px)",
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#fff",
+    background: "#191225cc",
+    padding: "4px 12px",
+    borderRadius: 999,
+    pointerEvents: "none",
   },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },

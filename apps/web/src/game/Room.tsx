@@ -1,11 +1,13 @@
-// The Canvas ("The Studio"): floor, four walls, and the GLB prop kit.
+// The active Canvas: floor, four walls, and the map's GLB prop kit. Reads the
+// active map so switching Canvases re-themes the floor/walls and swaps props.
 "use client";
 import { useMemo } from "react";
-import * as THREE from "three";
 import type { PropDef } from "./types";
-import { PROPS, ROOM_HALF, WALL_HEIGHT, FLOOR_COLOR, WALL_COLOR } from "./constants";
+import { ROOM_HALF, WALL_HEIGHT } from "./constants";
 import { useModel } from "./models";
 import { makePaperGrain } from "./surfaces";
+import { activeMap } from "./maps";
+import { useGame } from "./store";
 
 function Prop({ prop }: { prop: PropDef }) {
   const obj = useModel(prop.model);
@@ -22,18 +24,21 @@ function Prop({ prop }: { prop: PropDef }) {
 
 export function Room() {
   const S = ROOM_HALF;
+  // subscribe so switching Canvases re-renders floor/walls/props
+  const mapId = useGame((s) => s.mapId);
+  const map = activeMap();
   const floorTex = useMemo(() => {
-    const t = makePaperGrain(FLOOR_COLOR);
+    const t = makePaperGrain(map.floorColor);
     t.repeat.set(S, S); // ~1 tile per world unit
     return t;
-  }, [S]);
+  }, [S, map.floorColor]);
   const wallTex = useMemo(() => {
-    const t = makePaperGrain(WALL_COLOR);
+    const t = makePaperGrain(map.wallColor);
     t.repeat.set(S, WALL_HEIGHT / 2);
     return t;
-  }, [S]);
+  }, [S, map.wallColor]);
   return (
-    <group>
+    <group key={mapId}>
       {/* floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[S * 2, S * 2]} />
@@ -53,7 +58,7 @@ export function Room() {
         </mesh>
       ))}
 
-      {PROPS.map((p) => (
+      {map.props.map((p) => (
         <Prop key={p.id} prop={p} />
       ))}
     </group>

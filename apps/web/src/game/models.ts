@@ -15,6 +15,18 @@ export const MODEL_NAMES = [
   "locker",
   "blob_player",
   "blob_hunter",
+  // map-expansion prop kits (Neon Alley / Toy Box / Backrooms)
+  "na_dumpster",
+  "na_vending",
+  "na_barrier",
+  "na_drum",
+  "tb_block_red",
+  "tb_block_blue",
+  "tb_ball",
+  "tb_domino",
+  "br_box",
+  "br_cabinet",
+  "br_beam",
 ] as const;
 
 export const modelUrl = (name: string) => `/models/${name}.glb`;

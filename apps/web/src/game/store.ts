@@ -4,6 +4,7 @@
 import { create } from "zustand";
 import type { GamePhase, RoundOutcome, Stamp } from "./types";
 import { PAINT_BUDGET, PALETTE, PREP_SECONDS } from "./constants";
+import { DEFAULT_MAP_ID, setActiveMap } from "./maps";
 
 interface GameState {
   phase: GamePhase;
@@ -21,8 +22,11 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Active Canvas (map) id. */
+  mapId: string;
 
   // ---- actions ----
+  setMap: (id: string) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +56,14 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  mapId: DEFAULT_MAP_ID,
+
+  // Pick the active Canvas. Syncs the module-level active map that frame loops
+  // (camo/collision/Hunter) read.
+  setMap: (id) => {
+    setActiveMap(id);
+    set({ mapId: id });
+  },
 
   startPrep: () => {
     seqCounter = 0;

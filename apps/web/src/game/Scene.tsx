@@ -11,6 +11,7 @@ import { AmbientDecals, EliminationSplat } from "./Decals";
 import { useKeys } from "./useKeys";
 import { useGame } from "./store";
 import { shared } from "./shared";
+import { activeMap } from "./maps";
 import { HUNT_SECONDS } from "./constants";
 
 function CameraRig() {
@@ -43,6 +44,9 @@ function GameClock() {
 
 export function Scene() {
   const keys = useKeys();
+  // re-read the active Canvas so background/fog re-theme on map change
+  useGame((s) => s.mapId);
+  const bg = activeMap().bgColor;
   return (
     <Canvas
       shadows
@@ -50,8 +54,8 @@ export function Scene() {
       camera={{ position: [0, 9, 16], fov: 55 }}
       style={{ position: "absolute", inset: 0 }}
     >
-      <color attach="background" args={["#fbf7f0"]} />
-      <fog attach="fog" args={["#fbf7f0", 24, 46]} />
+      <color attach="background" args={[bg]} />
+      <fog attach="fog" args={[bg, 24, 46]} />
       <hemisphereLight args={["#ffffff", "#b9b4a8", 0.9]} />
       <directionalLight
         position={[8, 14, 6]}

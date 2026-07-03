@@ -10,6 +10,7 @@ import { useModel } from "./models";
 import { shared } from "./shared";
 import { scoreCamo } from "./camo";
 import { collide } from "./collision";
+import { activeMap } from "./maps";
 import {
   HUNTER_SPEED,
   HUNTER_VIEW_RANGE,
@@ -20,18 +21,6 @@ import {
 } from "./constants";
 
 const UP = new THREE.Vector3(0, 1, 0);
-
-// Patrol points in OPEN floor — kept clear of every prop footprint so the
-// Hunter can always reach them (a waypoint inside a prop = permanent stall).
-const WAYPOINTS: [number, number][] = [
-  [-4, -2],
-  [4, -2],
-  [8, -1],
-  [4, 3],
-  [-3, 3],
-  [0, -8],
-  [-4, 2],
-];
 
 export function Hunter() {
   const group = useRef<THREE.Group>(null);
@@ -57,6 +46,7 @@ export function Hunter() {
       return;
     }
 
+    const WAYPOINTS = activeMap().waypoints; // per-map patrol route
     const pos = g.position;
     const toPlayer = new THREE.Vector3().subVectors(shared.playerPos, pos);
     toPlayer.y = 0;
