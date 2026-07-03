@@ -28,8 +28,10 @@ export interface Skin {
    * 1.0 = plain (no tell, no penalty); lower = flashier tell = harder to hide.
    */
   fidelity: number;
-  /** Placeholder swatch color for the shop/scoreboard UI (real art is 2D). */
+  /** Fallback swatch color for the shop/scoreboard UI. */
   swatch: string;
+  /** Skin-tell thumbnail art (SPLOTCH Design Vol.4). */
+  art: string;
   /**
    * Cosmetic emissive tint applied to the blob's base material. Purely visual;
    * it does NOT enter camo scoring (camo reads the painted stamp colors only).
@@ -44,6 +46,7 @@ export interface Skin {
 export const SKINS: Skin[] = [
   {
     id: "plain",
+    art: "/art/skin-plain.svg",
     name: "Plain Blob",
     blurb: "No tell. Full camo fidelity — the honest hider's choice.",
     fidelity: 1.0,
@@ -52,6 +55,7 @@ export const SKINS: Skin[] = [
   },
   {
     id: "golden",
+    art: "/art/skin-golden.svg",
     name: "Golden",
     blurb: "A soft gilt sheen. Small tell, a little extra glory.",
     fidelity: 0.85,
@@ -61,6 +65,7 @@ export const SKINS: Skin[] = [
   },
   {
     id: "molten",
+    art: "/art/skin-molten.svg",
     name: "Molten",
     blurb: "Cracks of lava breathe through. A real tell — and a real payout.",
     fidelity: 0.72,
@@ -70,6 +75,7 @@ export const SKINS: Skin[] = [
   },
   {
     id: "prism",
+    art: "/art/skin-prism.svg",
     name: "Prism",
     blurb: "Refracts the light. Flashiest tell in the shop — hide in THIS and flex.",
     fidelity: 0.6,

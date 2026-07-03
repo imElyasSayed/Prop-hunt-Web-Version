@@ -77,13 +77,13 @@ function SkinPicker() {
                 transform: on ? "translateY(-2px)" : "none",
               }}
             >
-              <span
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={sk.art}
+                alt={sk.name}
                 style={{
-                  ...styles.skinSwatch,
-                  background: sk.swatch,
-                  boxShadow: sk.glow
-                    ? `0 0 ${6 + sk.glow * 12}px ${sk.tint ?? sk.swatch}`
-                    : "inset 0 0 0 1px #0002",
+                  ...styles.skinArt,
+                  filter: sk.glow ? `drop-shadow(0 0 ${4 + sk.glow * 8}px ${sk.tint ?? sk.swatch})` : "none",
                 }}
               />
               <span style={styles.skinName}>{sk.name}</span>
@@ -325,14 +325,11 @@ export function HUD() {
             </div>
           </div>
           <div style={styles.stealthLine}>
-            <span
-              style={{
-                ...styles.skinSwatch,
-                width: 16,
-                height: 16,
-                background: skin.swatch,
-                boxShadow: skin.glow ? `0 0 8px ${skin.tint ?? skin.swatch}` : "none",
-              }}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={skin.art}
+              alt={skin.name}
+              style={{ width: 22, height: 22, filter: skin.glow ? `drop-shadow(0 0 6px ${skin.tint ?? skin.swatch})` : "none" }}
             />
             {skin.name} · Stealth {Math.round(skin.fidelity * 100)}% · ×{mult.toFixed(2)} bonus
           </div>
@@ -502,6 +499,7 @@ const styles: Record<string, React.CSSProperties> = {
   skinRow: { display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" },
   skinCard: { display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 92, padding: "10px 6px", background: "#fff", border: "2px solid #0002", borderRadius: 12, cursor: "pointer" },
   skinSwatch: { width: 30, height: 30, borderRadius: "50%", display: "inline-block", marginBottom: 2 },
+  skinArt: { width: 48, height: 48, display: "block", marginBottom: 2, objectFit: "contain" },
   skinName: { fontSize: 12, fontWeight: 800, color: "#191225" },
   skinRating: { fontSize: 10, fontWeight: 700, color: "#555" },
   skinMult: { fontSize: 11, fontWeight: 800 },
