@@ -1,7 +1,7 @@
 // Last Light scene driver: runs the end-game escalation sim and renders the
 // collapsing safe sphere + its floor ring + the one-shot color-break front.
 "use client";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGame } from "./store";
@@ -18,6 +18,7 @@ import {
   SPHERE_BONUS_RATE,
   FRONT_SWEEP_SECONDS,
 } from "./lastlight";
+import { useArtTexture } from "./artTexture";
 
 const S = ROOM_HALF;
 
@@ -26,8 +27,18 @@ export function LastLight() {
   const sphere = useRef<THREE.Mesh>(null);
   const ring = useRef<THREE.Mesh>(null);
   const front = useRef<THREE.Mesh>(null);
+  const glow = useRef<THREE.Mesh>(null);
   const wasActive = useRef(false);
   const frontElapsed = useRef(0);
+
+  // Design Vol.5 art: the contested-sphere boundary marker + survivor glow halo.
+  const sphereTex = useArtTexture("/art/lastlight-sphere.svg", 256);
+  const glowTex = useArtTexture("/art/lastlight-glow.svg", 256);
+  const glowMat = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, toneMapped: false, color: "#b4f531" }),
+    [],
+  );
 
   const sphereMat = useMemo(
     () =>
@@ -64,15 +75,32 @@ export function LastLight() {
     [],
   );
 
+  // Route the boundary-marker art onto the floor ring + the halo onto the glow.
+  useEffect(() => {
+    if (sphereTex) {
+      ringMat.map = sphereTex;
+      ringMat.color.set("#ffffff"); // let the art's own colors read true
+      ringMat.needsUpdate = true;
+    }
+  }, [sphereTex, ringMat]);
+  useEffect(() => {
+    if (glowTex) {
+      glowMat.map = glowTex;
+      glowMat.needsUpdate = true;
+    }
+  }, [glowTex, glowMat]);
+
   useFrame((_, dtRaw) => {
     const sMesh = sphere.current;
     const rMesh = ring.current;
     const fMesh = front.current;
+    const gMesh = glow.current;
     if (!sMesh || !rMesh || !fMesh) return;
     const dt = Math.min(dtRaw, 0.05);
 
     if (phase !== "hunt") {
       sMesh.visible = rMesh.visible = fMesh.visible = false;
+      if (gMesh) gMesh.visible = false;
       shared.seekerSpeedMult = 1;
       shared.survivorGlow = 0;
       lastLight.active = false;
@@ -87,6 +115,7 @@ export function LastLight() {
 
     if (!active) {
       sMesh.visible = rMesh.visible = fMesh.visible = false;
+      if (gMesh) gMesh.visible = false;
       shared.seekerSpeedMult = 1;
       shared.survivorGlow = 0;
       return;
@@ -141,10 +170,19 @@ export function LastLight() {
     // pulse the ring so the contested zone reads as "hot"
     const pulse = 0.6 + 0.4 * Math.abs(Math.sin(survivedFor * 4));
     rMesh.scale.setScalar(r);
-    ringMat.opacity = 0.5 + 0.4 * pulse;
+    ringMat.opacity = 0.55 + 0.35 * pulse; // art keeps its own colors
     const col = inside ? "#b4f531" : "#ff2e9a";
-    ringMat.color.set(col);
     sphereMat.color.set(col);
+
+    // survivor glow halo follows the player, breathing with intensity
+    if (gMesh) {
+      gMesh.visible = true;
+      gMesh.position.set(shared.playerPos.x, 0.04, shared.playerPos.z);
+      const gs = 2.2 + 0.4 * Math.sin(survivedFor * 5);
+      gMesh.scale.setScalar(gs);
+      glowMat.opacity = (0.35 + 0.4 * intensity) * (0.7 + 0.3 * pulse);
+      glowMat.color.set(inside ? "#b4f531" : "#ff8fd0");
+    }
   });
 
   return (
@@ -153,9 +191,13 @@ export function LastLight() {
       <mesh ref={sphere} material={sphereMat} position={[0, 0.9, 0]}>
         <sphereGeometry args={[1, 24, 16]} />
       </mesh>
-      {/* floor ring marking the contested boundary (unit radius, scaled) */}
+      {/* contested-boundary marker (Design Vol.5 art; 2-unit plane, scaled by r) */}
       <mesh ref={ring} material={ringMat} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
-        <ringGeometry args={[0.9, 1, 48]} />
+        <planeGeometry args={[2, 2]} />
+      </mesh>
+      {/* survivor glow halo (follows the player) */}
+      <mesh ref={glow} material={glowMat} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} visible={false}>
+        <planeGeometry args={[2, 2]} />
       </mesh>
       {/* one-shot color-break front slab sweeping +z */}
       <mesh ref={front} material={frontMat} position={[0, 0.5, -S]}>
