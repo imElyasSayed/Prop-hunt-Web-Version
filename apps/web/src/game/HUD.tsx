@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import { lastLight, resetLastLight } from "./lastlight";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -145,6 +146,30 @@ function PaintMeter() {
   );
 }
 
+// Last Light banner — polls the module-ref sim via rAF (not the store).
+function LastLightBanner() {
+  const [st, setSt] = useState<{ on: boolean; inside: boolean }>({ on: false, inside: false });
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const on = lastLight.active;
+      const inside = lastLight.insideSphere;
+      setSt((p) => (p.on === on && p.inside === inside ? p : { on, inside }));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  if (!st.on) return null;
+  return (
+    <div style={{ ...styles.tideBanner, background: st.inside ? "#b4f531" : "#ff2e4f", color: st.inside ? "#191225" : "#fff" }}>
+      {st.inside
+        ? "🟢 LAST LIGHT — holding the sphere! Banking bonus…"
+        : "🔥 LAST LIGHT — seekers +30%, get to the shrinking sphere!"}
+    </div>
+  );
+}
+
 function TauntButton() {
   const [cooling, setCooling] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -183,6 +208,7 @@ export function HUD() {
     sfx.initAudio(); // unlock audio on this user gesture
     sfx.click();
     resetShared();
+    resetLastLight();
     startPrep();
   };
 
@@ -250,7 +276,18 @@ export function HUD() {
               <div style={styles.statNum}>{Math.round(useGame.getState().camoScore * 100)}%</div>
               <div style={styles.statLbl}>final camo</div>
             </div>
+            {lastLight.bonus > 0 && (
+              <div style={styles.stat}>
+                <div style={{ ...styles.statNum, color: "#5aa908" }}>+{Math.round(lastLight.bonus)}</div>
+                <div style={styles.statLbl}>last light</div>
+              </div>
+            )}
           </div>
+          {lastLight.bonus > 0 && (
+            <div style={styles.lastLightLine}>
+              🟢 You held the collapsing sphere — Last Light survival bonus banked.
+            </div>
+          )}
           <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
         </div>
       </div>
@@ -273,6 +310,8 @@ export function HUD() {
           )}
         </div>
       </div>
+
+      {!isPrep && <LastLightBanner />}
 
       <div style={styles.bottomLeft}>
         <CamoMeter />
@@ -366,6 +405,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
   watch: { color: "#fff", background: "#ff2e4f", padding: "6px 12px", borderRadius: 999, fontWeight: 800, fontSize: 13 },
+  tideBanner: {
+    position: "absolute",
+    top: 72,
+    left: "50%",
+    transform: "translateX(-50%)",
+    padding: "8px 18px",
+    borderRadius: 999,
+    fontWeight: 800,
+    fontSize: 14,
+    boxShadow: "0 4px 16px #0003",
+    pointerEvents: "none",
+    whiteSpace: "nowrap",
+  },
   bottomLeft: { position: "absolute", left: 20, bottom: 20, display: "flex", flexDirection: "column", gap: 12 },
   bottomCenter: {
     position: "absolute",
@@ -412,6 +464,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
+  lastLightLine: { fontSize: 12, fontWeight: 700, color: "#5aa908", margin: "0 0 4px" },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },
   statNum: { fontSize: 32, fontWeight: 800, color: "#191225", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-baloo), system-ui, sans-serif" },

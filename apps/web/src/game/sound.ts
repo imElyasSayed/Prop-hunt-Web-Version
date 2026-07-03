@@ -143,6 +143,34 @@ export function win() {
   });
 }
 
+/** Rising tension riser when Last Light (end-game chaos) begins. */
+export function lastLightStart() {
+  const c = ac();
+  if (!c) return;
+  // rising sawtooth riser
+  const o = c.createOscillator();
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(180, c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(720, c.currentTime + 1.2);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.setValueAtTime(600, c.currentTime);
+  lp.frequency.exponentialRampToValueAtTime(2600, c.currentTime + 1.2);
+  o.connect(lp);
+  env(lp, 0.24, 0.8, 0.6);
+  o.start();
+  o.stop(c.currentTime + 1.5);
+  // bright bell hit at the top
+  const b = c.createOscillator();
+  b.type = "triangle";
+  b.frequency.value = 1046;
+  const g = env(b, 0.2, 0.01, 0.5);
+  if (g) {
+    b.start(c.currentTime + 1.1);
+    b.stop(c.currentTime + 1.7);
+  }
+}
+
 /** Soft UI click. */
 export function click() {
   const c = ac();

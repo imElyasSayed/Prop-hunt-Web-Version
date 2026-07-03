@@ -15,6 +15,10 @@ export const shared = {
   nearestSurfaceColor: "#cfc9bd",
   /** True once the player has requested to end prep early / start moving. */
   taunting: false,
+  /** Seeker speed multiplier (Last Light bumps this to 1.3). Hunter reads it. */
+  seekerSpeedMult: 1,
+  /** Surviving-hider pulse glow 0..1 (Last Light ramps it). Player reads it. */
+  survivorGlow: 0,
 };
 
 export function resetShared() {
@@ -25,4 +29,6 @@ export function resetShared() {
   shared.coverage = 0;
   shared.nearestSurfaceColor = "#cfc9bd";
   shared.taunting = false;
+  shared.seekerSpeedMult = 1;
+  shared.survivorGlow = 0;
 }

@@ -37,6 +37,8 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
       map: texture,
       color: 0xffffff,
       roughness: 0.6,
+      emissive: new THREE.Color("#ff2e9a"),
+      emissiveIntensity: 0,
     });
     return m;
   }, [texture]);
@@ -104,6 +106,12 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
     const surf = nearestSurfaceColor(shared.playerPos);
     shared.nearestSurfaceColor = surf;
     const score = scoreCamo(color, coverage, surf);
+
+    // Last Light: surviving hiders emit a rising pulse glow (a fair tell).
+    const glow = shared.survivorGlow;
+    paintMat.emissiveIntensity =
+      glow > 0 ? glow * (0.5 + 0.5 * Math.abs(Math.sin(state.clock.elapsedTime * 5))) : 0;
+
     camoThrottle.current += dt;
     if (camoThrottle.current > 0.15) {
       camoThrottle.current = 0;

@@ -118,7 +118,9 @@ export function Hunter() {
       }
       // face the target (not the sidestep) so it still looks like it's hunting
       dir.current.lerp(desired, 0.12).normalize();
-      const speed = watched ? HUNTER_SPEED * 1.15 : HUNTER_SPEED;
+      // Last Light bumps seeker speed via shared.seekerSpeedMult (+30%).
+      const baseSpeed = watched ? HUNTER_SPEED * 1.15 : HUNTER_SPEED;
+      const speed = baseSpeed * shared.seekerSpeedMult;
       const step = speed * dt;
       const [cx, cz] = collide(pos.x + moveDir.x * step, pos.z + moveDir.z * step, 0.62);
       const moved = Math.hypot(cx - pos.x, cz - pos.z);
