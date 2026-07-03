@@ -4,6 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import {
+  clip,
+  resetClip,
+  recordEvent,
+  finalizeClip,
+  toggleStar,
+  exportClipText,
+} from "./clips";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -151,6 +159,7 @@ function TauntButton() {
   const taunt = () => {
     if (cooling) return;
     sfx.whistle();
+    recordEvent(useGame.getState().survivedFor, "📣 Taunt", "#ffd023");
     shared.taunting = true;
     setCooling(true);
     setTimeout(() => (shared.taunting = false), 2200);
@@ -169,12 +178,68 @@ function TauntButton() {
   );
 }
 
+// Ghost Director spectate panel: free-cam over the frozen scene + the round
+// clip timeline. Star ("ping") beats, then one-tap export.
+function SpectatePanel({ onExit }: { onExit: () => void }) {
+  const [, force] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const star = (i: number) => {
+    toggleStar(i);
+    sfx.click();
+    force((n) => n + 1);
+  };
+  const doExport = () => {
+    const text = exportClipText();
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1800);
+        },
+        () => {},
+      );
+    }
+    sfx.click();
+  };
+  return (
+    <div style={styles.spectatePanel}>
+      <div style={styles.spectateHead}>
+        <b style={{ fontSize: 16, fontFamily: "var(--font-baloo), system-ui" }}>🎬 Ghost Director</b>
+        <span style={{ fontSize: 11, opacity: 0.65 }}>drag to look · scroll to zoom</span>
+      </div>
+      <div style={styles.clipList}>
+        {clip.events.map((e, i) => (
+          <button key={i} onClick={() => star(i)} style={styles.clipRow} title="Ping this beat into your clip">
+            <span style={{ ...styles.clipDot, background: e.tone }} />
+            <span style={{ width: 34, fontVariantNumeric: "tabular-nums", opacity: 0.7 }}>{fmt(e.t)}</span>
+            <span style={{ flex: 1, textAlign: "left" }}>{e.label}</span>
+            <span style={{ opacity: e.starred ? 1 : 0.25 }}>{e.starred ? "⭐" : "☆"}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <button style={styles.exportBtn} onClick={doExport}>
+          {copied ? "✓ COPIED" : "⬇ EXPORT CLIP"}
+        </button>
+        <button style={{ ...styles.startHunt, background: "#8a4cff", boxShadow: "0 4px 0 #6a34cc" }} onClick={onExit}>
+          PLAY AGAIN ▶
+        </button>
+      </div>
+      <div style={{ fontSize: 10.5, opacity: 0.5, marginTop: 6 }}>
+        Video/GIF export is a media-pipeline deliverable — this copies the clip beats.
+      </div>
+    </div>
+  );
+}
+
 export function HUD() {
   const phase = useGame((s) => s.phase);
   const timeLeft = useGame((s) => s.timeLeft);
   const survivedFor = useGame((s) => s.survivedFor);
   const outcome = useGame((s) => s.outcome);
   const beingWatched = useGame((s) => s.beingWatched);
+  const spectating = useGame((s) => s.spectating);
+  const setSpectating = useGame((s) => s.setSpectating);
   const startPrep = useGame((s) => s.startPrep);
   const beginHunt = useGame((s) => s.beginHunt);
   const prevWatched = useRef(false);
@@ -183,24 +248,37 @@ export function HUD() {
     sfx.initAudio(); // unlock audio on this user gesture
     sfx.click();
     resetShared();
+    resetClip();
     startPrep();
   };
 
   const hunt = () => {
     sfx.click();
+    resetClip();
+    recordEvent(0, "🏁 Hunt begins", "#8a4cff");
     beginHunt();
   };
 
-  // result stings
+  // result stings + finalize the round clip
   useEffect(() => {
     if (phase !== "result") return;
-    if (outcome === "splatted") sfx.splat();
-    else if (outcome === "survived") sfx.win();
+    if (outcome === "splatted") {
+      sfx.splat();
+      recordEvent(useGame.getState().survivedFor, "💥 Splatted", "#ff2e4f");
+      finalizeClip("splatted", useGame.getState().survivedFor);
+    } else if (outcome === "survived") {
+      sfx.win();
+      recordEvent(useGame.getState().survivedFor, "🎉 Survived", "#2fce6a");
+      finalizeClip("survived", useGame.getState().survivedFor);
+    }
   }, [phase, outcome]);
 
-  // alert blip the moment the Hunter first spots you
+  // alert blip + clip beat the moment the Hunter first spots you
   useEffect(() => {
-    if (phase === "hunt" && beingWatched && !prevWatched.current) sfx.spotted();
+    if (phase === "hunt" && beingWatched && !prevWatched.current) {
+      sfx.spotted();
+      recordEvent(useGame.getState().survivedFor, "👁 Spotted", "#ff7a17");
+    }
     prevWatched.current = beingWatched;
   }, [beingWatched, phase]);
 
@@ -229,6 +307,9 @@ export function HUD() {
   }
 
   if (phase === "result") {
+    // Ghost Director: while spectating, hide the card so the free-cam shows
+    // through, and float the clip panel in the corner.
+    if (spectating) return <SpectatePanel onExit={start} />;
     const survived = outcome === "survived";
     return (
       <div style={styles.center}>
@@ -251,7 +332,12 @@ export function HUD() {
               <div style={styles.statLbl}>final camo</div>
             </div>
           </div>
-          <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 12 }}>
+            <button style={styles.spectate} onClick={() => { sfx.click(); setSpectating(true); }}>
+              🎬 SPECTATE / CLIP
+            </button>
+            <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
+          </div>
         </div>
       </div>
     );
@@ -411,6 +497,57 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  spectate: {
+    padding: "14px 22px",
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#191225",
+    background: "#0fd4e6",
+    border: "none",
+    borderRadius: 16,
+    cursor: "pointer",
+    boxShadow: "0 5px 0 #0aa6b5",
+    fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  spectatePanel: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    width: 280,
+    background: "#fffef8ee",
+    borderRadius: 16,
+    padding: "12px 14px",
+    boxShadow: "0 12px 40px #0003",
+    border: "2px solid #0fd4e688",
+  },
+  spectateHead: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 },
+  clipList: { display: "flex", flexDirection: "column", gap: 4, maxHeight: 260, overflowY: "auto" },
+  clipRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#222",
+    background: "#f4f1ea",
+    border: "none",
+    borderRadius: 8,
+    padding: "6px 8px",
+    cursor: "pointer",
+  },
+  clipDot: { width: 10, height: 10, borderRadius: "50%", flexShrink: 0 },
+  exportBtn: {
+    flex: 1,
+    padding: "10px 14px",
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#fff",
+    background: "#1a9c4c",
+    border: "none",
+    borderRadius: 12,
+    cursor: "pointer",
+    boxShadow: "0 4px 0 #147a3a",
   },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },

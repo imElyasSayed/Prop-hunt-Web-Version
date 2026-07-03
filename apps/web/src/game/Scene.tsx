@@ -2,6 +2,7 @@
 // that advances the phase machine and ends the hunt.
 "use client";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useRef } from "react";
 import { Room } from "./Room";
@@ -16,7 +17,10 @@ import { HUNT_SECONDS } from "./constants";
 function CameraRig() {
   const { camera } = useThree();
   const target = useRef(new THREE.Vector3());
+  const spectating = useGame((s) => s.spectating);
   useFrame(() => {
+    // In spectate mode the OrbitControls own the camera — don't fight them.
+    if (spectating) return;
     // follow the player from behind-and-above
     const p = shared.playerPos;
     const desired = new THREE.Vector3(p.x, p.y + 7.5, p.z + 9.5);
@@ -25,6 +29,22 @@ function CameraRig() {
     camera.lookAt(target.current);
   });
   return null;
+}
+
+// Free-cam controls, only mounted while spectating the frozen scene.
+function SpectateControls() {
+  const spectating = useGame((s) => s.spectating);
+  if (!spectating) return null;
+  return (
+    <OrbitControls
+      makeDefault
+      enablePan
+      target={[0, 0.6, 0]}
+      minDistance={4}
+      maxDistance={30}
+      maxPolarAngle={Math.PI / 2.05}
+    />
+  );
 }
 
 function GameClock() {
@@ -64,6 +84,7 @@ export function Scene() {
         shadow-camera-bottom={-16}
       />
       <CameraRig />
+      <SpectateControls />
       <GameClock />
       <Suspense fallback={null}>
         <Room />

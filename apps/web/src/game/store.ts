@@ -21,6 +21,8 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** True while the eliminated player is in free-cam spectate mode. */
+  spectating: boolean;
 
   // ---- actions ----
   startPrep: () => void;
@@ -32,6 +34,7 @@ interface GameState {
   setCamoScore: (s: number) => void;
   setSurfaceColor: (c: string) => void;
   setWatched: (w: boolean) => void;
+  setSpectating: (v: boolean) => void;
   splatPlayer: () => void;
   survive: () => void;
   reset: () => void;
@@ -52,6 +55,7 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  spectating: false,
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +68,7 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      spectating: false,
     });
   },
 
@@ -110,6 +115,7 @@ export const useGame = create<GameState>((set, get) => ({
   setCamoScore: (s) => set({ camoScore: s }),
   setSurfaceColor: (c) => set({ surfaceColor: c }),
   setWatched: (w) => set({ beingWatched: w }),
+  setSpectating: (v) => set({ spectating: v }),
 
   splatPlayer: () => {
     const s = get();
