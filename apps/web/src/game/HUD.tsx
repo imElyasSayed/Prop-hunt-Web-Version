@@ -170,6 +170,15 @@ function TauntButton() {
   );
 }
 
+const SCALE_ICON: Record<string, string> = {
+  roulette: "/art/scale-wheel.svg",
+  teeny: "/art/scale-teeny.svg",
+  normal: "/art/scale-normal.svg",
+  chonk: "/art/scale-chonk.svg",
+  giga: "/art/scale-giga.svg",
+  mixed: "/art/scale-mixed.svg",
+};
+
 function ScalePicker() {
   const scaleMode = useGame((s) => s.scaleMode);
   const setScaleMode = useGame((s) => s.setScaleMode);
@@ -196,7 +205,14 @@ function ScalePicker() {
                 borderColor: on ? "#6a34cf" : "#e0d8ef",
               }}
             >
-              <span style={{ fontSize: 18 }}>{m.emoji}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={SCALE_ICON[m.mode]}
+                alt=""
+                width={30}
+                height={30}
+                style={{ display: "block", filter: on ? "drop-shadow(0 1px 2px #0004)" : "none" }}
+              />
               <span style={{ fontSize: 11, fontWeight: 800 }}>{m.label}</span>
             </button>
           );
