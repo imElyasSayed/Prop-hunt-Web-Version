@@ -6,6 +6,7 @@ import { shared } from "./shared";
 import { resetShared } from "./shared";
 import * as sfx from "./sound";
 import { EMOTES, getEmote, EMOTE_DURATION } from "./emote";
+import { EmoteOverlay } from "./EmoteOverlay";
 import {
   PALETTE,
   PAINT_BUDGET,
@@ -170,6 +171,12 @@ function TauntButton() {
   );
 }
 
+const EMOTE_CHIP: Record<string, string> = {
+  peel: "/art/emote-peel-chip.svg",
+  melt: "/art/emote-melt-chip.svg",
+  confetti: "/art/emote-confetti-chip.svg",
+};
+
 function EmotePicker() {
   const equipped = useGame((s) => s.equippedEmote);
   const setEquipped = useGame((s) => s.setEquippedEmote);
@@ -196,7 +203,8 @@ function EmotePicker() {
                 borderColor: on ? "#191225" : "#e0d8ef",
               }}
             >
-              <span style={{ fontSize: 18 }}>{e.emoji}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={EMOTE_CHIP[e.id]} alt="" width={30} height={30} style={{ display: "block" }} />
               <span style={{ fontSize: 10, fontWeight: 800 }}>{e.label}</span>
             </button>
           );
@@ -210,6 +218,7 @@ function EmoteButton() {
   const equipped = useGame((s) => s.equippedEmote);
   const used = useGame((s) => s.emoteUsed);
   const setUsed = useGame((s) => s.setEmoteUsed);
+  const firePlay = useGame((s) => s.firePlay);
   const emote = getEmote(equipped);
   const fire = () => {
     if (used) return;
@@ -219,15 +228,18 @@ function EmoteButton() {
     shared.emote.t = 0;
     shared.emoteReveal = EMOTE_DURATION;
     sfx.emoteSting(equipped);
+    firePlay(equipped); // play the sprite-sheet flourish overlay
   };
   return (
     <button
       onClick={fire}
       disabled={used}
       title={emote.blurb}
-      style={{ ...styles.emoteBtn, opacity: used ? 0.4 : 1, background: used ? "#bbb" : emote.color }}
+      style={{ ...styles.emoteBtn, opacity: used ? 0.4 : 1, background: used ? "#bbb" : emote.color, display: "flex", alignItems: "center", gap: 8 }}
     >
-      {emote.emoji} {used ? "EMOTE USED" : "BREAK COVER"}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={EMOTE_CHIP[equipped]} alt="" width={22} height={22} style={{ display: "block" }} />
+      {used ? "EMOTE USED" : "BREAK COVER"}
     </button>
   );
 }
@@ -338,6 +350,8 @@ export function HUD() {
           )}
         </div>
       </div>
+
+      <EmoteOverlay />
 
       <div style={styles.bottomLeft}>
         <CamoMeter />

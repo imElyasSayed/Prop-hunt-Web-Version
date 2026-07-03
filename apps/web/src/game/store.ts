@@ -26,10 +26,15 @@ interface GameState {
   equippedEmote: EmoteId;
   /** Whether this life's single Reveal Emote has been spent. */
   emoteUsed: boolean;
+  /** Bumped each time an emote fires, so the sprite overlay can (re)play. */
+  emotePlayNonce: number;
+  /** Which emote is currently playing its flourish. */
+  emotePlayId: EmoteId | null;
 
   // ---- actions ----
   setEquippedEmote: (e: EmoteId) => void;
   setEmoteUsed: (u: boolean) => void;
+  firePlay: (id: EmoteId) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -61,9 +66,13 @@ export const useGame = create<GameState>((set, get) => ({
   beingWatched: false,
   equippedEmote: "peel",
   emoteUsed: false,
+  emotePlayNonce: 0,
+  emotePlayId: null,
 
   setEquippedEmote: (e) => set({ equippedEmote: e }),
   setEmoteUsed: (u) => set({ emoteUsed: u }),
+  firePlay: (id) =>
+    set((s) => ({ emotePlayId: id, emotePlayNonce: s.emotePlayNonce + 1 })),
 
   startPrep: () => {
     seqCounter = 0;
