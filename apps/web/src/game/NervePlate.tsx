@@ -30,7 +30,9 @@ export function NervePlate() {
       style={{ pointerEvents: "none", userSelect: "none" }}
     >
       <div style={wrap}>
-        <div style={{ ...label, color: nerveColor }}>
+        <div style={{ ...label, color: nerveColor, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/art/ability-nerve.svg" alt="" width={13} height={13} style={{ display: "block" }} />
           NERVE ×{nerve.toFixed(2)}
         </div>
         <div style={track}>

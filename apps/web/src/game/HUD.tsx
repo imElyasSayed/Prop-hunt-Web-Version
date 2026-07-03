@@ -163,8 +163,14 @@ function TauntButton() {
     [],
   );
   return (
-    <button onClick={taunt} disabled={cooling} style={{ ...styles.taunt, opacity: cooling ? 0.5 : 1 }}>
-      {cooling ? "…" : "TAUNT 📣"}
+    <button
+      onClick={taunt}
+      disabled={cooling}
+      style={{ ...styles.taunt, opacity: cooling ? 0.5 : 1, display: "flex", alignItems: "center", gap: 8 }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/art/ability-taunt.svg" alt="" width={24} height={24} style={{ display: "block" }} />
+      {cooling ? "…" : "TAUNT"}
     </button>
   );
 }
