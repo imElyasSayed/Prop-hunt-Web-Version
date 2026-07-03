@@ -160,7 +160,11 @@ function PartyModifierBanner({ modifier }: { modifier: string }) {
   if (!mod) return null;
   return (
     <div style={styles.partyBanner}>
-      <b style={{ fontSize: 15 }}>{mod.emoji} {mod.name}</b>
+      <b style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/art/party-badge.svg" alt="" style={{ width: 22, height: 22 }} />
+        {mod.emoji} {mod.name}
+      </b>
       <span style={{ fontSize: 12, opacity: 0.85 }}>{mod.blurb}</span>
     </div>
   );
@@ -267,7 +271,10 @@ export function HUD() {
           </ul>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <button style={styles.play} onClick={start}>PLAY ▶</button>
-            <button style={styles.party} onClick={startParty}>PROP PARTY 🎉</button>
+            <button style={{ ...styles.party, display: "flex", alignItems: "center", gap: 8 }} onClick={startParty}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/art/party-badge.svg" alt="" style={{ width: 24, height: 24 }} /> PROP PARTY
+            </button>
           </div>
           <p style={styles.partyHint}>
             Prop Party — prop-dense map, short rounds, a silly modifier each round,
