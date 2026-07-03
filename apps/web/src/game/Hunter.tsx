@@ -10,6 +10,8 @@ import { useModel } from "./models";
 import { shared } from "./shared";
 import { scoreCamo } from "./camo";
 import { collide } from "./collision";
+import { splat as splatSfx } from "./sound";
+import { decoy, popDecoy, DECOY_BAIT_POINTS } from "./decoy";
 import {
   HUNTER_SPEED,
   HUNTER_VIEW_RANGE,
@@ -44,6 +46,7 @@ export function Hunter() {
   const phase = useGame((s) => s.phase);
   const splat = useGame((s) => s.splatPlayer);
   const setWatched = useGame((s) => s.setWatched);
+  const awardBaited = useGame((s) => s.awardBaited);
   const hunterObj = useModel("blob_hunter");
 
   useFrame((_, dtRaw) => {
@@ -91,8 +94,26 @@ export function Hunter() {
 
     // --- decide target ---
     const chasing = suspicion.current > 0.05 && (watched || suspicion.current > 0.3);
+
+    // Decoy Shed: when not actively watching the real player, a whistling decoy
+    // (or one the Hunter has wandered near) diverts it. Reaching the fake pops it.
+    let distDecoy = Infinity;
+    if (decoy.active) {
+      distDecoy = Math.hypot(pos.x - decoy.pos.x, pos.z - decoy.pos.z);
+    }
+    const investigatingDecoy =
+      decoy.active && !watched && suspicion.current < 0.5 && (decoy.lure > 0 || distDecoy < 7);
+
     let target: THREE.Vector3;
-    if (chasing) {
+    if (investigatingDecoy) {
+      target = decoy.pos;
+      if (distDecoy < HUNTER_TAG_RANGE && popDecoy()) {
+        // wasted commit — the fake pops into splatter, you bank baited points
+        awardBaited(DECOY_BAIT_POINTS);
+        splatSfx();
+        suspicion.current = 0;
+      }
+    } else if (chasing) {
       target = watched ? shared.playerPos : lastSeen.current;
     } else {
       const [wx, wz] = WAYPOINTS[wp.current];

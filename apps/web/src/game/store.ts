@@ -21,6 +21,10 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Decoy Shed charges left this round (1/round). */
+  decoyCharges: number;
+  /** Points banked from a seeker popping your decoy (capped by 1 decoy/round). */
+  baitedPoints: number;
 
   // ---- actions ----
   startPrep: () => void;
@@ -32,6 +36,8 @@ interface GameState {
   setCamoScore: (s: number) => void;
   setSurfaceColor: (c: string) => void;
   setWatched: (w: boolean) => void;
+  spendDecoyCharge: () => boolean;
+  awardBaited: (pts: number) => void;
   splatPlayer: () => void;
   survive: () => void;
   reset: () => void;
@@ -52,6 +58,8 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  decoyCharges: 1,
+  baitedPoints: 0,
 
   startPrep: () => {
     seqCounter = 0;
@@ -64,6 +72,8 @@ export const useGame = create<GameState>((set, get) => ({
       survivedFor: 0,
       camoScore: 0,
       beingWatched: false,
+      decoyCharges: 1,
+      baitedPoints: 0,
     });
   },
 
@@ -110,6 +120,13 @@ export const useGame = create<GameState>((set, get) => ({
   setCamoScore: (s) => set({ camoScore: s }),
   setSurfaceColor: (c) => set({ surfaceColor: c }),
   setWatched: (w) => set({ beingWatched: w }),
+  spendDecoyCharge: () => {
+    const s = get();
+    if (s.phase !== "hunt" || s.decoyCharges <= 0) return false;
+    set({ decoyCharges: s.decoyCharges - 1 });
+    return true;
+  },
+  awardBaited: (pts) => set({ baitedPoints: get().baitedPoints + pts }),
 
   splatPlayer: () => {
     const s = get();

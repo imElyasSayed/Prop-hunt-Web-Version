@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import { dropDecoy, resetDecoy } from "./decoy";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -145,6 +146,28 @@ function PaintMeter() {
   );
 }
 
+// Drop a frozen decoy clone at your current spot (1 charge/round).
+function DecoyButton() {
+  const charges = useGame((s) => s.decoyCharges);
+  const spend = useGame((s) => s.spendDecoyCharge);
+  const drop = () => {
+    if (!spend()) return;
+    dropDecoy(shared.playerPos, useGame.getState().stamps);
+    sfx.whistle();
+  };
+  const spent = charges <= 0;
+  return (
+    <button
+      onClick={drop}
+      disabled={spent}
+      title="Drop a frozen morph-snapshot of yourself to bait the Hunter"
+      style={{ ...styles.decoy, opacity: spent ? 0.45 : 1 }}
+    >
+      {spent ? "DECOY SPENT" : "DROP DECOY 🫥"}
+    </button>
+  );
+}
+
 function TauntButton() {
   const [cooling, setCooling] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -183,6 +206,7 @@ export function HUD() {
     sfx.initAudio(); // unlock audio on this user gesture
     sfx.click();
     resetShared();
+    resetDecoy();
     startPrep();
   };
 
@@ -250,7 +274,16 @@ export function HUD() {
               <div style={styles.statNum}>{Math.round(useGame.getState().camoScore * 100)}%</div>
               <div style={styles.statLbl}>final camo</div>
             </div>
+            {useGame.getState().baitedPoints > 0 && (
+              <div style={styles.stat}>
+                <div style={{ ...styles.statNum, color: "#8a4cff" }}>+{useGame.getState().baitedPoints}</div>
+                <div style={styles.statLbl}>baited</div>
+              </div>
+            )}
           </div>
+          {useGame.getState().baitedPoints > 0 && (
+            <div style={styles.baitedLine}>🫥 Your decoy fooled the Hunter — baited points banked!</div>
+          )}
           <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
         </div>
       </div>
@@ -290,9 +323,12 @@ export function HUD() {
 
       {!isPrep && (
         <div style={styles.bottomCenter}>
-          <TauntButton />
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <TauntButton />
+            <DecoyButton />
+          </div>
           <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
-            Taunt to bait the Hunter — risky!
+            Taunt to bait the Hunter — or drop a decoy and slip away.
           </div>
         </div>
       )}
@@ -412,6 +448,19 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
+  decoy: {
+    padding: "16px 22px",
+    fontSize: 17,
+    fontWeight: 800,
+    color: "#fff",
+    background: "#8a4cff",
+    border: "none",
+    borderRadius: 16,
+    cursor: "pointer",
+    boxShadow: "0 5px 0 #6a34cc",
+    fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  baitedLine: { fontSize: 12, fontWeight: 700, color: "#8a4cff", margin: "0 0 4px" },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },
   statNum: { fontSize: 32, fontWeight: 800, color: "#191225", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-baloo), system-ui, sans-serif" },
