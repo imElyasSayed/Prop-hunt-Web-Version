@@ -152,7 +152,9 @@ function FoldMeter() {
   const low = charge < 0.2;
   return (
     <div style={styles.foldWrap}>
-      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3, color: "#222" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 3, color: "#222" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/art/ability-fold.svg" alt="" width={18} height={18} style={{ display: "block" }} />
         FOLD{" "}
         <b style={{ color: folded ? "#8a4cff" : low ? "#d23" : "#555" }}>
           {folded ? "HIDDEN as prop 🫥" : "hold F / Space near a prop"}
