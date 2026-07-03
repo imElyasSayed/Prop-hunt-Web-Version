@@ -10,10 +10,14 @@ import { RIFTS, RIFT_SPIN_MS, RIFT_INTERVAL, rollRiftIndex } from "./rift";
 
 const SEG = 360 / RIFTS.length;
 
-// conic-gradient background from the mutator colors
-const CONIC = `conic-gradient(${RIFTS.map(
-  (r, i) => `${r.color} ${i * SEG}deg ${(i + 1) * SEG}deg`,
-).join(",")})`;
+// mutator icon art (asset-pack Vol.3)
+const RIFT_ICON: Record<string, string> = {
+  lowgrav: "/art/rift-lowgrav.svg",
+  mirror: "/art/rift-mirror.svg",
+  silent: "/art/rift-silent.svg",
+  doublegaze: "/art/rift-doublegaze.svg",
+  speedseekers: "/art/rift-speedseekers.svg",
+};
 
 export function RiftWheel() {
   const phase = useGame((s) => s.phase);
@@ -71,38 +75,31 @@ export function RiftWheel() {
     <div style={styles.wrap}>
       <div style={styles.pointer}>▼</div>
       <div style={styles.wheelBox}>
-        <div
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/art/rift-wheel.svg"
+          alt=""
           style={{
-            ...styles.wheel,
-            background: CONIC,
+            ...styles.wheelImg,
             transform: `rotate(${rotation}deg)`,
-            transition: spinning ? `transform ${RIFT_SPIN_MS}ms cubic-bezier(0.17,0.67,0.2,1)` : "none",
+            transition: spinning
+              ? `transform ${RIFT_SPIN_MS}ms cubic-bezier(0.17,0.67,0.2,1)`
+              : "none",
           }}
-        >
-          {RIFTS.map((r, i) => (
-            <span
-              key={r.id}
-              style={{
-                ...styles.emoji,
-                transform: `rotate(${i * SEG + SEG / 2}deg) translateY(-30px)`,
-              }}
-            >
-              <span style={{ display: "inline-block", transform: `rotate(${-(i * SEG + SEG / 2)}deg)` }}>
-                {r.emoji}
-              </span>
-            </span>
-          ))}
-        </div>
-        <div style={styles.hub}>RIFT</div>
+        />
       </div>
       <div style={styles.banner}>
         {spinning ? (
-          <span style={{ opacity: 0.7 }}>rolling the Rift…</span>
+          <span style={{ opacity: 0.75, fontWeight: 800 }}>rolling the Rift…</span>
         ) : rift ? (
           <>
-            <b style={{ color: rift.color === "#b4f531" || rift.color === "#ffd023" ? "#191225" : rift.color }}>
-              {rift.emoji} {rift.label}
-            </b>
+            <div style={styles.bannerHead}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={RIFT_ICON[rift.id]} alt="" width={22} height={22} style={{ display: "block" }} />
+              <b style={{ color: rift.color === "#b4f531" || rift.color === "#ffd023" ? "#191225" : rift.color }}>
+                {rift.label}
+              </b>
+            </div>
             <span style={styles.blurb}>{rift.blurb}</span>
           </>
         ) : (
@@ -124,58 +121,48 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 2,
     pointerEvents: "none",
   },
-  pointer: { fontSize: 16, color: "#191225", lineHeight: "10px", filter: "drop-shadow(0 1px 1px #fff)" },
-  wheelBox: { position: "relative", width: 92, height: 92 },
-  wheel: {
-    width: 92,
-    height: 92,
-    borderRadius: "50%",
-    position: "relative",
-    boxShadow: "0 4px 16px #0003, inset 0 0 0 3px #191225",
-  },
-  emoji: {
+  pointer: { fontSize: 16, color: "#191225", lineHeight: "8px", zIndex: 2, filter: "drop-shadow(0 1px 1px #fff)" },
+  // clip the box to the wheel's disc so the SVG's own top pointer is hidden
+  wheelBox: { position: "relative", width: 84, height: 84, overflow: "hidden" },
+  wheelImg: {
     position: "absolute",
-    top: "50%",
-    left: "50%",
-    marginLeft: -9,
-    marginTop: -9,
-    width: 18,
-    height: 18,
-    fontSize: 15,
+    width: 84,
+    left: 0,
+    top: -7, // shift up so the disc (not the SVG pointer) centres in the box
+    transformOrigin: "50% 53.4%", // the wheel circle's centre within the art
+    filter: "drop-shadow(0 4px 10px #0003)",
+  },
+  banner: {
+    marginTop: 5,
+    width: 160,
     textAlign: "center",
-    transformOrigin: "center center",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 2,
   },
-  hub: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%,-50%)",
-    width: 34,
-    height: 34,
-    borderRadius: "50%",
-    background: "#fff",
-    border: "2px solid #191225",
+  bannerHead: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 9,
+    gap: 6,
+    fontSize: 13,
     fontWeight: 800,
-    color: "#191225",
+    width: 160,
+    height: 44,
+    backgroundImage: "url(/art/rift-locked-banner.svg)",
+    backgroundSize: "100% 100%",
+    backgroundRepeat: "no-repeat",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
-  banner: {
-    marginTop: 4,
-    background: "#fffe",
-    borderRadius: 10,
-    padding: "5px 10px",
-    width: 150,
-    textAlign: "center",
-    fontSize: 12,
+  blurb: {
+    fontSize: 10.5,
     fontWeight: 700,
-    boxShadow: "0 3px 12px #0002",
-    display: "flex",
-    flexDirection: "column",
-    gap: 1,
+    color: "#191225",
+    background: "#fffd",
+    borderRadius: 8,
+    padding: "3px 8px",
+    lineHeight: 1.25,
+    boxShadow: "0 2px 8px #0002",
   },
-  blurb: { fontSize: 10, fontWeight: 600, opacity: 0.7, lineHeight: 1.2 },
 };
