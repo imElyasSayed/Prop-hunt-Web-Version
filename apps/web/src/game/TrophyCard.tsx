@@ -82,7 +82,16 @@ function splatDots(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: num
   }
 }
 
-export function drawTrophyCard(canvas: HTMLCanvasElement, d: TrophyData) {
+type Art = Partial<Record<
+  "paper" | "wordmark" | "ring" | "footer" | "survived" | "splatted",
+  HTMLImageElement
+>>;
+
+export function drawTrophyCard(
+  canvas: HTMLCanvasElement,
+  d: TrophyData,
+  art: Art = {},
+) {
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   const ctx = canvas.getContext("2d")!;
@@ -93,32 +102,52 @@ export function drawTrophyCard(canvas: HTMLCanvasElement, d: TrophyData) {
   // --- background ---
   ctx.fillStyle = "#fbf7f0";
   ctx.fillRect(0, 0, W, H);
+  // seamless paper-grain tile from the asset pack, else plain paper
+  if (art.paper) {
+    const pat = ctx.createPattern(art.paper, "repeat");
+    if (pat) {
+      ctx.fillStyle = pat;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
   // brand corner splats (very subtle)
   splatDots(ctx, 40, 40, 26, "#ff2e9a12");
   splatDots(ctx, W - 44, H - 60, 34, "#0fd4e610");
 
-  // --- header ---
+  // --- header (SPL[splat-O]TCH) ---
   ctx.textAlign = "left";
   ctx.fillStyle = "#191225";
   ctx.font = "800 40px system-ui, sans-serif";
   ctx.fillText("SPL", 34, 66);
   const splW = ctx.measureText("SPL").width;
-  splatDots(ctx, 34 + splW + 18, 54, 15, "#ff2e9a");
+  const oX = 34 + splW + 3;
+  if (art.wordmark) {
+    ctx.drawImage(art.wordmark, oX, 26, 38, 38); // the real Splat-O lockup
+  } else {
+    splatDots(ctx, oX + 15, 54, 15, "#ff2e9a");
+  }
   ctx.fillStyle = "#191225";
-  ctx.fillText("TCH", 34 + splW + 40, 66);
+  ctx.fillText("TCH", oX + 40, 66);
   ctx.textAlign = "right";
   ctx.fillStyle = "#8a4cff";
   ctx.font = "800 16px system-ui, sans-serif";
   ctx.fillText("TROPHY · " + MAP_NAME, W - 34, 60);
 
-  // --- result banner ---
+  // --- result banner (sticker badge from the asset pack) ---
   ctx.textAlign = "center";
-  roundRect(ctx, 34, 92, W - 68, 74, 18);
-  ctx.fillStyle = accent;
-  ctx.fill();
-  ctx.fillStyle = "#fff";
-  ctx.font = "800 46px system-ui, sans-serif";
-  ctx.fillText(survived ? "SURVIVED" : "SPLATTED", W / 2, 143);
+  const badge = survived ? art.survived : art.splatted;
+  if (badge) {
+    const bw = 300;
+    const bh = (badge.naturalHeight / badge.naturalWidth) * bw || 150;
+    ctx.drawImage(badge, (W - bw) / 2, 88, bw, bh);
+  } else {
+    roundRect(ctx, 34, 92, W - 68, 74, 18);
+    ctx.fillStyle = accent;
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "800 46px system-ui, sans-serif";
+    ctx.fillText(survived ? "SURVIVED" : "SPLATTED", W / 2, 143);
+  }
 
   // --- painted blob thumbnail ---
   const cx = W / 2;
@@ -145,12 +174,17 @@ export function drawTrophyCard(canvas: HTMLCanvasElement, d: TrophyData) {
     drawBrush(ctx, brush, x, y, rad, s.color);
   }
   ctx.restore();
-  // blob outline
-  ctx.beginPath();
-  ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = "#19122522";
-  ctx.stroke();
+  // splattery display ring from the asset pack, else a plain outline
+  if (art.ring) {
+    const rs = R * 2 + 40;
+    ctx.drawImage(art.ring, cx - rs / 2, cy - rs / 2, rs, rs);
+  } else {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#19122522";
+    ctx.stroke();
+  }
 
   // "hid against" surface chip
   ctx.textAlign = "center";
@@ -202,19 +236,50 @@ export function drawTrophyCard(canvas: HTMLCanvasElement, d: TrophyData) {
   ctx.font = "500 17px system-ui, sans-serif";
   wrapText(ctx, d.tell?.detail ?? "", 58, ty + 6, W - 68 - 48, 24);
 
-  // --- footer ---
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#8a4cff";
-  ctx.font = "800 20px system-ui, sans-serif";
-  ctx.fillText("Blend in. Cash out.", W / 2, H - 34);
+  // --- footer flourish ---
+  if (art.footer) {
+    const fw = 300;
+    const fh = (art.footer.naturalHeight / art.footer.naturalWidth) * fw || 24;
+    ctx.drawImage(art.footer, (W - fw) / 2, H - 34 - fh / 2, fw, fh);
+  } else {
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#8a4cff";
+    ctx.font = "800 20px system-ui, sans-serif";
+    ctx.fillText("Blend in. Cash out.", W / 2, H - 34);
+  }
 }
+
+const ART_SRC: Record<string, string> = {
+  paper: "/art/trophy-paper.svg",
+  wordmark: "/art/trophy-wordmark.svg",
+  ring: "/art/trophy-blob-ring.svg",
+  footer: "/art/trophy-footer.svg",
+  survived: "/art/trophy-badge-survived.svg",
+  splatted: "/art/trophy-badge-splatted.svg",
+};
 
 export function TrophyCard({ data }: { data: TrophyData }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const artRef = useRef<Record<string, HTMLImageElement>>({});
+  const reqRef = useRef<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (canvasRef.current) drawTrophyCard(canvasRef.current, data);
+    const draw = () => {
+      if (canvasRef.current) drawTrophyCard(canvasRef.current, data, artRef.current);
+    };
+    draw(); // immediate (procedural fallbacks until the art loads)
+    // load the branded art once; redraw as each piece arrives
+    for (const [key, src] of Object.entries(ART_SRC)) {
+      if (reqRef.current.has(key)) continue;
+      reqRef.current.add(key);
+      const img = new Image();
+      img.onload = () => {
+        artRef.current[key] = img;
+        draw();
+      };
+      img.src = src;
+    }
   }, [data]);
 
   const download = () => {
