@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import { seeker, resetSeeker } from "./seeker";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -145,6 +146,96 @@ function PaintMeter() {
   );
 }
 
+// Escalation Clock meter — polls the seeker runtime; shows the rising heat and
+// the hard-reveal warning in the final seconds.
+function EscalationMeter() {
+  const [s, setS] = useState({ esc: 0, hard: false });
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const esc = Math.round(seeker.escalation * 100) / 100;
+      const hard = seeker.hardReveal;
+      setS((p) => (p.esc === esc && p.hard === hard ? p : { esc, hard }));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  if (s.esc <= 0 && !s.hard) return null;
+  const pct = Math.round(s.esc * 100);
+  return (
+    <div style={styles.escWrap}>
+      <div style={styles.escLabel}>
+        SEEKER HEAT <b style={{ color: s.hard ? "#ff2e4f" : "#ff7a17" }}>{s.hard ? "REVEAL!" : `${pct}%`}</b>
+      </div>
+      <div style={styles.escTrack}>
+        <div style={{ ...styles.escFill, width: `${s.hard ? 100 : pct}%`, background: s.hard ? "#ff2e4f" : "linear-gradient(90deg,#ffd023,#ff7a17)" }} />
+      </div>
+    </div>
+  );
+}
+
+// Second Look + Visual Whistle overlay: an on-screen ripple + caption for every
+// involuntary tell (accessibility — not just audio) and the inspect feedback.
+// Inject the whistle keyframes once (inline styles can't declare @keyframes).
+function ensureWhistleKeyframes() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById("splotch-whistle-kf")) return;
+  const el = document.createElement("style");
+  el.id = "splotch-whistle-kf";
+  el.textContent = `
+    @keyframes splotchRipple { 0%{transform:scale(0.4);opacity:0.9} 100%{transform:scale(1.6);opacity:0} }
+    @keyframes splotchFade { 0%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+  `;
+  document.head.appendChild(el);
+}
+
+function VisualWhistle() {
+  const beingWatched = useGame((s) => s.beingWatched);
+  const [caption, setCaption] = useState<{ text: string; tone: string; key: number } | null>(null);
+  useEffect(ensureWhistleKeyframes, []);
+  const keyRef = useRef(0);
+  const prevWatch = useRef(false);
+  const prevInspect = useRef(false);
+  const prevResolveAt = useRef(-999);
+
+  const fire = (text: string, tone: string) => {
+    keyRef.current += 1;
+    setCaption({ text, tone, key: keyRef.current });
+  };
+
+  // spotted tell (store-driven)
+  useEffect(() => {
+    if (beingWatched && !prevWatch.current) fire("👁 TELL — you were spotted", "#ff2e4f");
+    prevWatch.current = beingWatched;
+  }, [beingWatched]);
+
+  // inspect + taunt tells (module-ref driven) via rAF
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      if (seeker.inspecting && !prevInspect.current) fire("🔍 SECOND LOOK — hold still & blend!", "#8a4cff");
+      prevInspect.current = seeker.inspecting;
+      if (seeker.lastInspectAt !== prevResolveAt.current) {
+        prevResolveAt.current = seeker.lastInspectAt;
+        if (seeker.lastInspect === "wrong") fire("😮‍💨 Wrong read — the Hunter backs off", "#1a9c4c");
+        else if (seeker.lastInspect === "correct") fire("🎯 Read confirmed — caught!", "#ff2e4f");
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  if (!caption) return null;
+  return (
+    <div key={caption.key} style={styles.whistleWrap} aria-live="polite">
+      <span style={{ ...styles.whistleRipple, borderColor: caption.tone }} />
+      <span style={{ ...styles.whistleCaption, background: caption.tone }}>{caption.text}</span>
+    </div>
+  );
+}
+
 function TauntButton() {
   const [cooling, setCooling] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -183,6 +274,7 @@ export function HUD() {
     sfx.initAudio(); // unlock audio on this user gesture
     sfx.click();
     resetShared();
+    resetSeeker();
     startPrep();
   };
 
@@ -274,9 +366,12 @@ export function HUD() {
         </div>
       </div>
 
+      {!isPrep && <VisualWhistle />}
+
       <div style={styles.bottomLeft}>
         <CamoMeter />
         {isPrep && <PaintMeter />}
+        {!isPrep && <EscalationMeter />}
       </div>
 
       {isPrep && (
@@ -376,6 +471,38 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "center",
     gap: 8,
+  },
+  escWrap: { background: "#fffe", borderRadius: 12, padding: "8px 12px", width: 260, boxShadow: "0 4px 16px #0002" },
+  escLabel: { fontSize: 12, fontWeight: 700, marginBottom: 5, color: "#222" },
+  escTrack: { height: 10, background: "#e6e6ea", borderRadius: 999, overflow: "hidden" },
+  escFill: { height: "100%", borderRadius: 999, transition: "width 0.2s" },
+  whistleWrap: {
+    position: "absolute",
+    top: "34%",
+    left: "50%",
+    transform: "translate(-50%,-50%)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 10,
+    pointerEvents: "none",
+    animation: "splotchFade 1.6s ease-out forwards",
+  },
+  whistleRipple: {
+    width: 90,
+    height: 90,
+    borderRadius: "50%",
+    border: "5px solid #ff2e4f",
+    animation: "splotchRipple 1.4s ease-out forwards",
+  },
+  whistleCaption: {
+    color: "#fff",
+    fontWeight: 800,
+    fontSize: 15,
+    padding: "6px 14px",
+    borderRadius: 999,
+    boxShadow: "0 4px 16px #0004",
+    whiteSpace: "nowrap",
   },
   camoWrap: { background: "#fffe", borderRadius: 12, padding: "8px 12px", width: 260, boxShadow: "0 4px 16px #0002" },
   camoLabel: { fontSize: 12, fontWeight: 700, marginBottom: 5, color: "#222" },

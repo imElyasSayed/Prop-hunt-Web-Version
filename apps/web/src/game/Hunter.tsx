@@ -10,6 +10,18 @@ import { useModel } from "./models";
 import { shared } from "./shared";
 import { scoreCamo } from "./camo";
 import { collide } from "./collision";
+import { spotted as spottedSfx } from "./sound";
+import {
+  seeker,
+  computeEscalation,
+  INSPECT_TIME,
+  INSPECT_TRIGGER_DIST,
+  INSPECT_SUSPICION_LO,
+  INSPECT_COOLDOWN,
+  ESCALATION_RANGE_BONUS,
+  ESCALATION_SUSPICION_BONUS,
+  HARD_REVEAL_AT,
+} from "./seeker";
 import {
   HUNTER_SPEED,
   HUNTER_VIEW_RANGE,
@@ -17,6 +29,7 @@ import {
   HUNTER_TAG_RANGE,
   HUNTER_SUSPICION_TO_TAG,
   CAMO_SAFE_THRESHOLD,
+  HUNT_SECONDS,
 } from "./constants";
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -63,30 +76,84 @@ export function Hunter() {
     const dist = toPlayer.length();
     const toNorm = toPlayer.clone().normalize();
 
+    // --- Escalation Clock: scan intensifies as the round timer drains ---
+    const survivedFor = useGame.getState().survivedFor;
+    const esc = computeEscalation(survivedFor);
+    seeker.escalation = esc;
+    const viewRange = HUNTER_VIEW_RANGE * (1 + ESCALATION_RANGE_BONUS * esc);
+    const remaining = HUNT_SECONDS - survivedFor;
+    // Hard end-of-round reveal — guarantees resolution, no unfindable stalemate.
+    seeker.hardReveal = remaining <= HARD_REVEAL_AT;
+
+    // tick Second Look timers
+    seeker.inspectCooldown = Math.max(0, seeker.inspectCooldown - dt);
+
     const inCone =
-      dist < HUNTER_VIEW_RANGE && dir.current.dot(toNorm) > HUNTER_FOV_DOT;
+      dist < viewRange && dir.current.dot(toNorm) > HUNTER_FOV_DOT;
     const camo = scoreCamo(
       shared.playerColor,
       shared.coverage,
       shared.nearestSurfaceColor,
     );
-    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
-    const watched = inCone && detectable;
+    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting || seeker.hardReveal;
+    const watched = (inCone && detectable) || (seeker.hardReveal && dist < viewRange);
 
     setWatched(watched);
 
+    // --- Second Look: commit to a close inspect on a mid-confidence read ---
+    if (seeker.inspecting) {
+      seeker.inspectLeft -= dt;
+      if (seeker.inspectLeft <= 0) {
+        // resolve the inspect
+        const stillOff = camo < CAMO_SAFE_THRESHOLD || shared.taunting || seeker.hardReveal;
+        if (stillOff && dist < HUNTER_TAG_RANGE + 0.4) {
+          seeker.lastInspect = "correct";
+          seeker.lastInspectAt = survivedFor;
+          suspicion.current = 1; // correct read → catch (tag resolves below)
+        } else {
+          seeker.lastInspect = "wrong"; // you held still and blended
+          seeker.lastInspectAt = survivedFor;
+          suspicion.current = Math.min(suspicion.current, 0.2);
+          seeker.inspectCooldown = INSPECT_COOLDOWN; // penalty buys you time
+        }
+        seeker.inspecting = false;
+      }
+      // frozen while inspecting: face the player, don't move, then tag check
+      dir.current.lerp(toNorm, 0.2).normalize();
+      g.rotation.y = Math.atan2(dir.current.x, dir.current.z);
+      shared.hunterPos.copy(pos);
+      shared.hunterDir.copy(dir.current);
+      if (suspicion.current >= 1 && dist < HUNTER_TAG_RANGE) splat();
+      return;
+    }
+
     // --- suspicion ---
     if (watched) {
-      const mismatch = shared.taunting
+      const mismatch = shared.taunting || seeker.hardReveal
         ? 1
         : Math.max(0.15, (CAMO_SAFE_THRESHOLD - camo) / CAMO_SAFE_THRESHOLD);
+      const rate = 1 + ESCALATION_SUSPICION_BONUS * esc;
       suspicion.current = Math.min(
         1,
-        suspicion.current + (mismatch * dt) / HUNTER_SUSPICION_TO_TAG,
+        suspicion.current + (mismatch * rate * dt) / HUNTER_SUSPICION_TO_TAG,
       );
       lastSeen.current.copy(shared.playerPos);
     } else {
       suspicion.current = Math.max(0, suspicion.current - dt * 0.4);
+    }
+
+    // trigger a Second Look when close with a mid-confidence read
+    if (
+      !seeker.hardReveal &&
+      seeker.inspectCooldown <= 0 &&
+      watched &&
+      dist < INSPECT_TRIGGER_DIST &&
+      suspicion.current >= INSPECT_SUSPICION_LO &&
+      suspicion.current < 1
+    ) {
+      seeker.inspecting = true;
+      seeker.inspectLeft = INSPECT_TIME;
+      spottedSfx();
     }
 
     // --- decide target ---
