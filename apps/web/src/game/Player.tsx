@@ -11,8 +11,11 @@ import { spray } from "./sound";
 import { nearestSurfaceColor, scoreCamo } from "./camo";
 import { collide } from "./collision";
 import { shared } from "./shared";
+import { tide, isWet } from "./tide";
 import type { Keys } from "./useKeys";
 import { PLAYER_SPEED, PLAYER_RADIUS } from "./constants";
+
+const WHITE = new THREE.Color("#ffffff");
 
 export function Player({ keys }: { keys: RefObject<Keys> }) {
   const group = useRef<THREE.Group>(null);
@@ -99,11 +102,18 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
 
     // --- camo scoring (throttled push to store for the HUD) ---
     const { color, coverage } = getDominant();
-    shared.playerColor = color;
-    shared.coverage = coverage;
+    // Paint Tide: a caught hider is force-recolored to the wet color for the
+    // wet-match window — effective color/coverage become the tide's.
+    const wet = phase === "hunt" && isWet();
+    const effColor = wet ? tide.wetColor : color;
+    const effCoverage = wet ? Math.max(coverage, 0.9) : coverage;
+    shared.playerColor = effColor;
+    shared.coverage = effCoverage;
+    // tint the blob to the wet coat (cosmetic), restore when dry
+    paintMat.color.set(wet ? tide.wetColor : WHITE);
     const surf = nearestSurfaceColor(shared.playerPos);
     shared.nearestSurfaceColor = surf;
-    const score = scoreCamo(color, coverage, surf);
+    const score = scoreCamo(effColor, effCoverage, surf);
     camoThrottle.current += dt;
     if (camoThrottle.current > 0.15) {
       camoThrottle.current = 0;

@@ -143,6 +143,32 @@ export function win() {
   });
 }
 
+/** Low wet rumble when the Paint Tide wall releases and sweeps. */
+export function tideSweep() {
+  const c = ac();
+  if (!c) return;
+  // rumble: filtered noise swelling then fading
+  const src = c.createBufferSource();
+  src.buffer = noiseBuffer(c, 1.4);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.setValueAtTime(240, c.currentTime);
+  lp.frequency.linearRampToValueAtTime(520, c.currentTime + 0.7);
+  lp.frequency.linearRampToValueAtTime(180, c.currentTime + 1.3);
+  src.connect(lp);
+  env(lp, 0.34, 0.25, 1.1);
+  src.start();
+  src.stop(c.currentTime + 1.4);
+  // sub sweep
+  const o = c.createOscillator();
+  o.type = "sine";
+  o.frequency.setValueAtTime(70, c.currentTime);
+  o.frequency.linearRampToValueAtTime(120, c.currentTime + 0.9);
+  env(o, 0.28, 0.2, 1.0);
+  o.start();
+  o.stop(c.currentTime + 1.3);
+}
+
 /** Soft UI click. */
 export function click() {
   const c = ac();

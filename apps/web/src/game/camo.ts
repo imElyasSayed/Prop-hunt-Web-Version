@@ -3,12 +3,14 @@
 import * as THREE from "three";
 import { PROPS, FLOOR_COLOR } from "./constants";
 import { colorMatch, averageHex } from "./color";
+import { tintOverride } from "./tide";
 
 const tmp = new THREE.Vector3();
 
 /** Returns the color of the nearest prop within reach, else the floor color. */
 export function nearestSurfaceColor(pos: THREE.Vector3): string {
   let best: string = FLOOR_COLOR;
+  let bestId: string | null = null;
   let bestDist = 3.6; // must be reasonably close to "back against" a prop
   for (const p of PROPS) {
     // horizontal distance to prop centre, minus half its footprint
@@ -18,7 +20,13 @@ export function nearestSurfaceColor(pos: THREE.Vector3): string {
     if (d < bestDist) {
       bestDist = d;
       best = p.color;
+      bestId = p.id;
     }
+  }
+  // Paint Tide: a surface the wet wall crossed reads as the wet color for ~25s.
+  if (bestId) {
+    const wet = tintOverride(bestId);
+    if (wet) return wet;
   }
   return best;
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import { tide, resetTide, isWet } from "./tide";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -145,6 +146,39 @@ function PaintMeter() {
   );
 }
 
+// Paint Tide status banner — polls the tide runtime via rAF (it lives in module
+// refs, not the store) and warns of an incoming wall / shows the wet-coat timer.
+function TideWarning() {
+  const [state, setState] = useState<"idle" | "warn" | "sweep" | "wet">("idle");
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const next = isWet()
+        ? "wet"
+        : tide.sweeping
+          ? "sweep"
+          : tide.telegraphing
+            ? "warn"
+            : "idle";
+      setState((prev) => (prev === next ? prev : next));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  if (state === "idle") return null;
+  const cfg = {
+    warn: { bg: "#ff7a17", txt: "🌊 PAINT TIDE INCOMING — sprint in to color-match!" },
+    sweep: { bg: "#0fd4e6", txt: "🌊 WET WALL SWEEPING — dive in or dodge!" },
+    wet: { bg: "#b4f531", txt: "💧 WET-MATCHED — you now read as the tide color (~6s)" },
+  }[state]!;
+  return (
+    <div style={{ ...styles.tideBanner, background: cfg.bg, color: state === "wet" ? "#191225" : "#fff" }}>
+      {cfg.txt}
+    </div>
+  );
+}
+
 function TauntButton() {
   const [cooling, setCooling] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -183,6 +217,7 @@ export function HUD() {
     sfx.initAudio(); // unlock audio on this user gesture
     sfx.click();
     resetShared();
+    resetTide();
     startPrep();
   };
 
@@ -288,6 +323,8 @@ export function HUD() {
         </div>
       )}
 
+      {!isPrep && <TideWarning />}
+
       {!isPrep && (
         <div style={styles.bottomCenter}>
           <TauntButton />
@@ -366,6 +403,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
   watch: { color: "#fff", background: "#ff2e4f", padding: "6px 12px", borderRadius: 999, fontWeight: 800, fontSize: 13 },
+  tideBanner: {
+    position: "absolute",
+    top: 72,
+    left: "50%",
+    transform: "translateX(-50%)",
+    padding: "8px 18px",
+    borderRadius: 999,
+    fontWeight: 800,
+    fontSize: 14,
+    boxShadow: "0 4px 16px #0003",
+    pointerEvents: "none",
+    whiteSpace: "nowrap",
+  },
   bottomLeft: { position: "absolute", left: 20, bottom: 20, display: "flex", flexDirection: "column", gap: 12 },
   bottomCenter: {
     position: "absolute",
