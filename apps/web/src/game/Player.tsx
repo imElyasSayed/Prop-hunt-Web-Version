@@ -11,6 +11,7 @@ import { spray } from "./sound";
 import { nearestSurfaceColor, scoreCamo } from "./camo";
 import { collide } from "./collision";
 import { shared } from "./shared";
+import { getSkin } from "./skins";
 import type { Keys } from "./useKeys";
 import { PLAYER_SPEED, PLAYER_RADIUS } from "./constants";
 
@@ -27,6 +28,8 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
   const addStamp = useGame((s) => s.addStamp);
   const setCamoScore = useGame((s) => s.setCamoScore);
   const setSurfaceColor = useGame((s) => s.setSurfaceColor);
+  const skinId = useGame((s) => s.skinId);
+  const skin = getSkin(skinId);
 
   const { texture, getDominant } = usePaintTexture(stamps);
 
@@ -40,6 +43,15 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
     });
     return m;
   }, [texture]);
+
+  // Cosmetic skin "tell": a purely visual emissive glow on the blob. It does
+  // NOT enter camo scoring — the tell's camo penalty is applied numerically via
+  // shared.skinFidelity, keeping the veto (no cosmetic changes detection).
+  useMemo(() => {
+    paintMat.emissive = new THREE.Color(skin.tint ?? "#000000");
+    paintMat.emissiveIntensity = skin.glow;
+    paintMat.needsUpdate = true;
+  }, [paintMat, skin.tint, skin.glow]);
   const blobObj = useModel("blob_player", (mesh) => {
     mesh.material = paintMat;
   });
@@ -103,7 +115,8 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
     shared.coverage = coverage;
     const surf = nearestSurfaceColor(shared.playerPos);
     shared.nearestSurfaceColor = surf;
-    const score = scoreCamo(color, coverage, surf);
+    shared.skinFidelity = skin.fidelity;
+    const score = scoreCamo(color, coverage, surf, skin.fidelity);
     camoThrottle.current += dt;
     if (camoThrottle.current > 0.15) {
       camoThrottle.current = 0;

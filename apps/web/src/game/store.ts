@@ -4,6 +4,7 @@
 import { create } from "zustand";
 import type { GamePhase, RoundOutcome, Stamp } from "./types";
 import { PAINT_BUDGET, PALETTE, PREP_SECONDS } from "./constants";
+import { DEFAULT_SKIN_ID } from "./skins";
 
 interface GameState {
   phase: GamePhase;
@@ -21,6 +22,8 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Equipped cosmetic skin id (see skins.ts). Persists across rounds. */
+  skinId: string;
 
   // ---- actions ----
   startPrep: () => void;
@@ -32,6 +35,7 @@ interface GameState {
   setCamoScore: (s: number) => void;
   setSurfaceColor: (c: string) => void;
   setWatched: (w: boolean) => void;
+  setSkin: (id: string) => void;
   splatPlayer: () => void;
   survive: () => void;
   reset: () => void;
@@ -52,6 +56,7 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  skinId: DEFAULT_SKIN_ID,
 
   startPrep: () => {
     seqCounter = 0;
@@ -110,6 +115,7 @@ export const useGame = create<GameState>((set, get) => ({
   setCamoScore: (s) => set({ camoScore: s }),
   setSurfaceColor: (c) => set({ surfaceColor: c }),
   setWatched: (w) => set({ beingWatched: w }),
+  setSkin: (id) => set({ skinId: id }),
 
   splatPlayer: () => {
     const s = get();

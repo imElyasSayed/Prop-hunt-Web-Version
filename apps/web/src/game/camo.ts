@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import { PROPS, FLOOR_COLOR } from "./constants";
 import { colorMatch, averageHex } from "./color";
+import { applyTellPenalty } from "./skins";
 
 const tmp = new THREE.Vector3();
 
@@ -32,6 +33,12 @@ export function scoreCamo(
   avatarColor: string,
   coverage: number,
   surfaceColor: string,
+  /**
+   * Equipped skin's Stealth Rating (fidelity, 0..1). A flashier skin (<1)
+   * shaves the final camo score via its tell penalty — a structural handicap,
+   * NOT a change to detection timing. Defaults to 1 (plain, no tell).
+   */
+  fidelity = 1,
 ): number {
   // "paintedness": you read as fully painted once ~35% of the blob is covered.
   const painted = Math.min(1, coverage / 0.35);
@@ -39,7 +46,9 @@ export function scoreCamo(
   const effective = averageHex("#fbf7f0", avatarColor, painted);
   const match = colorMatch(effective, surfaceColor);
   // Painting the *right* color to full coverage should score near-perfect.
-  return Math.max(0, Math.min(1, match * (0.78 + 0.22 * painted)));
+  const base = Math.max(0, Math.min(1, match * (0.78 + 0.22 * painted)));
+  // A flashy skin's tell keeps you from ever fully vanishing.
+  return applyTellPenalty(base, fidelity);
 }
 
 export { tmp };

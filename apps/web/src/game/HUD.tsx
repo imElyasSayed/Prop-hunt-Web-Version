@@ -5,6 +5,7 @@ import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
 import * as sfx from "./sound";
+import { SKINS, getSkin, stealthMultiplier } from "./skins";
 import {
   PALETTE,
   PAINT_BUDGET,
@@ -42,6 +43,67 @@ function SplotchO({ size = "1em" }: { size?: string }) {
         <circle cx="63" cy="50" r="4.5" fill="#191225" />
       </g>
     </svg>
+  );
+}
+
+// Shop / loadout: pick a cosmetic skin. Each publishes its Stealth Rating and
+// the reward multiplier you earn by hiding in it. Swatches are placeholders —
+// real skin-tell art is a 2D-art deliverable (see the design prompts).
+function SkinPicker() {
+  const skinId = useGame((s) => s.skinId);
+  const setSkin = useGame((s) => s.setSkin);
+  const equip = (id: string) => {
+    sfx.click();
+    setSkin(id);
+    shared.skinFidelity = getSkin(id).fidelity;
+  };
+  return (
+    <div style={styles.shop}>
+      <div style={styles.shopTitle}>PAINT KIT — pick your Stealth Rating</div>
+      <div style={styles.skinRow}>
+        {SKINS.map((sk) => {
+          const on = sk.id === skinId;
+          const mult = stealthMultiplier(sk.fidelity);
+          const rating = Math.round(sk.fidelity * 100);
+          return (
+            <button
+              key={sk.id}
+              onClick={() => equip(sk.id)}
+              title={sk.blurb}
+              style={{
+                ...styles.skinCard,
+                borderColor: on ? "#191225" : "#0002",
+                boxShadow: on ? "0 4px 0 #8a4cff" : "0 2px 0 #0001",
+                transform: on ? "translateY(-2px)" : "none",
+              }}
+            >
+              <span
+                style={{
+                  ...styles.skinSwatch,
+                  background: sk.swatch,
+                  boxShadow: sk.glow
+                    ? `0 0 ${6 + sk.glow * 12}px ${sk.tint ?? sk.swatch}`
+                    : "inset 0 0 0 1px #0002",
+                }}
+              />
+              <span style={styles.skinName}>{sk.name}</span>
+              <span style={styles.skinRating}>Stealth {rating}%</span>
+              <span
+                style={{
+                  ...styles.skinMult,
+                  color: mult > 1 ? "#c4176f" : "#1a9c4c",
+                }}
+              >
+                ×{mult.toFixed(2)} points
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={styles.shopHint}>
+        Flashier skins are harder to hide in — but surviving in one pays more.
+      </div>
+    </div>
   );
 }
 
@@ -222,6 +284,7 @@ export function HUD() {
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
           </ul>
+          <SkinPicker />
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
       </div>
@@ -230,6 +293,12 @@ export function HUD() {
 
   if (phase === "result") {
     const survived = outcome === "survived";
+    const skin = getSkin(useGame.getState().skinId);
+    const mult = stealthMultiplier(skin.fidelity);
+    // Base-compatible Splotch-Points readout so the inverse-fidelity multiplier
+    // has something to bite on (merge-time: multiply banked Nerve by `mult`).
+    const basePoints = Math.round(survivedFor * (survived ? 12 : 8));
+    const points = Math.round(basePoints * mult);
     return (
       <div style={styles.center}>
         <div style={{ ...styles.card, borderColor: survived ? "#2fce6a" : "#ff5b5b" }}>
@@ -250,6 +319,22 @@ export function HUD() {
               <div style={styles.statNum}>{Math.round(useGame.getState().camoScore * 100)}%</div>
               <div style={styles.statLbl}>final camo</div>
             </div>
+            <div style={styles.stat}>
+              <div style={{ ...styles.statNum, color: "#c4176f" }}>{points}</div>
+              <div style={styles.statLbl}>splotch pts</div>
+            </div>
+          </div>
+          <div style={styles.stealthLine}>
+            <span
+              style={{
+                ...styles.skinSwatch,
+                width: 16,
+                height: 16,
+                background: skin.swatch,
+                boxShadow: skin.glow ? `0 0 8px ${skin.tint ?? skin.swatch}` : "none",
+              }}
+            />
+            {skin.name} · Stealth {Math.round(skin.fidelity * 100)}% · ×{mult.toFixed(2)} bonus
           </div>
           <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
         </div>
@@ -412,6 +497,16 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
+  shop: { margin: "18px 0 4px", padding: "12px 10px 10px", background: "#faf7f2", borderRadius: 16, border: "2px solid #0001" },
+  shopTitle: { fontSize: 12, fontWeight: 800, letterSpacing: 0.5, color: "#8a4cff", textTransform: "uppercase", marginBottom: 10 },
+  skinRow: { display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" },
+  skinCard: { display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 92, padding: "10px 6px", background: "#fff", border: "2px solid #0002", borderRadius: 12, cursor: "pointer" },
+  skinSwatch: { width: 30, height: 30, borderRadius: "50%", display: "inline-block", marginBottom: 2 },
+  skinName: { fontSize: 12, fontWeight: 800, color: "#191225" },
+  skinRating: { fontSize: 10, fontWeight: 700, color: "#555" },
+  skinMult: { fontSize: 11, fontWeight: 800 },
+  shopHint: { fontSize: 11, opacity: 0.6, marginTop: 8 },
+  stealthLine: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 13, fontWeight: 700, color: "#444", margin: "2px 0 4px" },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },
   statNum: { fontSize: 32, fontWeight: 800, color: "#191225", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-baloo), system-ui, sans-serif" },

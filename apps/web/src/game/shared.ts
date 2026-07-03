@@ -15,6 +15,12 @@ export const shared = {
   nearestSurfaceColor: "#cfc9bd",
   /** True once the player has requested to end prep early / start moving. */
   taunting: false,
+  /**
+   * Equipped skin's Stealth Rating (camo fidelity, 0..1). 1 = plain/no tell.
+   * Read every frame by camo scoring so flashy skins carry their tell penalty
+   * without triggering a React re-render.
+   */
+  skinFidelity: 1,
 };
 
 export function resetShared() {
@@ -25,4 +31,6 @@ export function resetShared() {
   shared.coverage = 0;
   shared.nearestSurfaceColor = "#cfc9bd";
   shared.taunting = false;
+  // NB: skinFidelity is intentionally NOT reset here — the equipped skin
+  // persists across rounds. HUD sets it when the player picks a skin.
 }

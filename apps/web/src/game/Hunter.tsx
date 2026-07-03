@@ -69,6 +69,7 @@ export function Hunter() {
       shared.playerColor,
       shared.coverage,
       shared.nearestSurfaceColor,
+      shared.skinFidelity,
     );
     const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
     const watched = inCone && detectable;
