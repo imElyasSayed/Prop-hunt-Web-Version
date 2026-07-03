@@ -4,6 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import {
+  loadPresets,
+  savePreset,
+  deletePreset,
+  FREE_PRESET_SLOTS,
+  type Preset,
+} from "./presets";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -101,6 +108,64 @@ function PalettePicker() {
           onChange={(e) => setBrush(parseFloat(e.target.value))}
           style={{ width: 120 }}
         />
+      </div>
+    </div>
+  );
+}
+
+// Camo Preset Loadouts: save/name/hot-swap favorite paint-jobs. Prep-only.
+function PresetBar() {
+  const stamps = useGame((s) => s.stamps);
+  const loadStamps = useGame((s) => s.loadStamps);
+  const [presets, setPresets] = useState<Preset[]>([]);
+  const [name, setName] = useState("");
+  useEffect(() => setPresets(loadPresets()), []);
+
+  const save = () => {
+    if (!stamps.length || presets.length >= FREE_PRESET_SLOTS) return;
+    sfx.click();
+    setPresets(savePreset(name, stamps));
+    setName("");
+  };
+  const load = (p: Preset) => {
+    sfx.click();
+    loadStamps(p.stamps);
+  };
+  const remove = (id: string) => {
+    sfx.click();
+    setPresets(deletePreset(id));
+  };
+  const full = presets.length >= FREE_PRESET_SLOTS;
+
+  return (
+    <div style={styles.presetBar}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: "#8a4cff", marginBottom: 6 }}>
+        CAMO PRESETS — one-tap “become the couch” ({presets.length}/{FREE_PRESET_SLOTS} free)
+      </div>
+      <div style={styles.presetRow}>
+        {presets.map((p) => (
+          <div key={p.id} style={styles.presetChip}>
+            <button onClick={() => load(p)} title="Hot-swap to this loadout" style={styles.presetLoad}>
+              <span style={{ ...styles.presetSwatch, background: p.swatch }} />
+              {p.name}
+            </button>
+            <button onClick={() => remove(p.id)} title="Delete" style={styles.presetDel}>✕</button>
+          </div>
+        ))}
+        {!presets.length && <span style={{ fontSize: 11, opacity: 0.55 }}>No saved loadouts yet.</span>}
+      </div>
+      <div style={styles.presetSaveRow}>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={full ? "All free slots used" : "Name this paint-job…"}
+          disabled={full}
+          maxLength={16}
+          style={styles.presetInput}
+        />
+        <button onClick={save} disabled={!stamps.length || full} style={{ ...styles.presetSave, opacity: !stamps.length || full ? 0.45 : 1 }}>
+          💾 SAVE
+        </button>
       </div>
     </div>
   );
@@ -281,6 +346,7 @@ export function HUD() {
 
       {isPrep && (
         <div style={styles.bottomCenter}>
+          <PresetBar />
           <PalettePicker />
           <button style={styles.startHunt} onClick={hunt}>
             I&apos;m hidden — START HUNT ▶
@@ -385,6 +451,15 @@ const styles: Record<string, React.CSSProperties> = {
   paintWrap: { background: "#fffe", borderRadius: 12, padding: "8px 12px", width: 260, boxShadow: "0 4px 16px #0002" },
   paintTrack: { height: 10, background: "#e6e6ea", borderRadius: 999, overflow: "hidden" },
   paintFill: { height: "100%", background: "linear-gradient(90deg,#0fd4e6,#8a4cff)", borderRadius: 999, transition: "width 0.1s" },
+  presetBar: { background: "#fffef8ee", borderRadius: 14, padding: "10px 14px", boxShadow: "0 4px 16px #0002", maxWidth: 420 },
+  presetRow: { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8, minHeight: 28 },
+  presetChip: { display: "flex", alignItems: "stretch", borderRadius: 8, overflow: "hidden", boxShadow: "0 2px 0 #0001" },
+  presetLoad: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "#191225", background: "#eee9fb", border: "none", padding: "5px 8px", cursor: "pointer" },
+  presetSwatch: { width: 14, height: 14, borderRadius: "50%", display: "inline-block", boxShadow: "inset 0 0 0 1px #0002" },
+  presetDel: { fontSize: 11, fontWeight: 800, color: "#a33", background: "#f6dede", border: "none", padding: "0 7px", cursor: "pointer" },
+  presetSaveRow: { display: "flex", gap: 6 },
+  presetInput: { flex: 1, fontSize: 12, padding: "6px 8px", borderRadius: 8, border: "2px solid #0002", fontFamily: "var(--font-nunito), system-ui" },
+  presetSave: { fontSize: 12, fontWeight: 800, color: "#fff", background: "#8a4cff", border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", boxShadow: "0 3px 0 #6a34cc" },
   palette: { background: "#fffe", borderRadius: 14, padding: "10px 14px", boxShadow: "0 4px 16px #0002" },
   swatchRow: { display: "flex", gap: 8, justifyContent: "center" },
   swatch: { width: 30, height: 30, borderRadius: 8, border: "none", cursor: "pointer", transition: "transform 0.1s" },

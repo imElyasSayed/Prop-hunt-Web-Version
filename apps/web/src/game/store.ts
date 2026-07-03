@@ -27,6 +27,7 @@ interface GameState {
   beginHunt: () => void;
   tick: (dt: number) => void;
   addStamp: (u: number, v: number) => void;
+  loadStamps: (stamps: Stamp[]) => void;
   setColor: (c: string) => void;
   setBrushSize: (s: number) => void;
   setCamoScore: (s: number) => void;
@@ -103,6 +104,18 @@ export const useGame = create<GameState>((set, get) => ({
       stamps: [...s.stamps, stamp],
       paintLeft: Math.max(0, s.paintLeft - 1),
     });
+  },
+
+  // Hot-swap a saved Camo Preset: replace the current paint with the preset's
+  // stamps. Convenience, not power — it charges the SAME paint budget the job
+  // uses (clamped), so it's identical to having hand-painted it. Prep only.
+  loadStamps: (stamps) => {
+    const s = get();
+    if (s.phase !== "prep") return;
+    const used = Math.min(stamps.length, PAINT_BUDGET);
+    const copy = stamps.slice(0, used).map((st, i) => ({ ...st, seq: i }));
+    seqCounter = copy.length;
+    set({ stamps: copy, paintLeft: PAINT_BUDGET - used });
   },
 
   setColor: (c) => set({ selectedColor: c }),
