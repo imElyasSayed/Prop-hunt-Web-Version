@@ -21,8 +21,11 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** True while playing a Mimic + Confessional Vote round (drives that UI). */
+  mimicMode: boolean;
 
   // ---- actions ----
+  setMimicMode: (v: boolean) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +55,9 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  mimicMode: false,
+
+  setMimicMode: (v) => set({ mimicMode: v }),
 
   startPrep: () => {
     seqCounter = 0;

@@ -4,6 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import {
+  mimic,
+  startMimicRound,
+  exitMimicMode,
+  logSabotage,
+  buildEvidence,
+  resolveVote,
+  SUSPECTS,
+} from "./mimic";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -145,6 +154,103 @@ function PaintMeter() {
   );
 }
 
+// Secret role reveal (only the local player sees their own role).
+function MimicRoleChip() {
+  const you = mimic.youAreMimic;
+  return (
+    <div style={{ ...styles.roleChip, background: you ? "#191225" : "#0fd4e6", color: you ? "#ff2e9a" : "#191225" }}>
+      {you ? "🎭 YOU ARE THE MIMIC — get a teammate tagged" : "🫧 HONEST HIDER — just survive"}
+    </div>
+  );
+}
+
+// Mimic sabotage: plant a gaze-bait beacon on a suspected ally (measurable).
+function SabotageControl() {
+  const [open, setOpen] = useState(false);
+  const [used, setUsed] = useState(0);
+  const bait = (idx: number) => {
+    logSabotage(idx, "gaze-bait", useGame.getState().survivedFor);
+    sfx.whistle();
+    setUsed((n) => n + 1);
+    setOpen(false);
+  };
+  return (
+    <div style={{ position: "relative" }}>
+      <button style={styles.sabotage} onClick={() => setOpen((o) => !o)}>
+        🎯 GAZE-BAIT {used > 0 ? `(${used})` : ""}
+      </button>
+      {open && (
+        <div style={styles.sabotageMenu}>
+          <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, opacity: 0.7 }}>Aim at a teammate:</div>
+          {SUSPECTS.filter((s) => s.idx !== 0).map((s) => (
+            <button key={s.idx} style={styles.sabotageItem} onClick={() => bait(s.idx)}>
+              <span style={{ ...styles.presetSwatch, background: s.color }} /> {s.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Post-round Confessional Vote card: anonymized evidence feed + roster vote.
+function ConfessionalVote({ survived, onAgain }: { survived: boolean; onAgain: () => void }) {
+  const [picked, setPicked] = useState<number | null>(null);
+  const evidence = buildEvidence();
+  const res = picked !== null ? resolveVote(picked, survived) : null;
+  return (
+    <div style={styles.center}>
+      <div style={{ ...styles.card, maxWidth: 520, borderColor: "#8a4cff" }}>
+        <h1 style={{ ...styles.logo, fontSize: 34 }}>CONFESSIONAL 🎭</h1>
+        <p style={styles.tag}>Who was the Mimic?</p>
+
+        <div style={styles.evidence}>
+          {evidence.map((line, i) => (
+            <div key={i} style={styles.evidenceLine}>{line}</div>
+          ))}
+        </div>
+
+        {res === null ? (
+          <>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#555", margin: "10px 0 6px" }}>
+              Cast your vote:
+            </div>
+            <div style={styles.voteRow}>
+              {SUSPECTS.map((s) => (
+                <button key={s.idx} style={styles.voteBtn} onClick={() => { sfx.click(); setPicked(s.idx); }}>
+                  <span style={{ ...styles.presetSwatch, background: s.color, width: 18, height: 18 }} />
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div style={styles.verdict}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: res.detective ? "#1a9c4c" : "#d23", fontFamily: "var(--font-baloo), system-ui" }}>
+              {res.detective ? "🕵️ Correct! Detective bonus" : "🫥 Wrong — the Mimic slips away"}
+            </div>
+            <div style={{ fontSize: 13, margin: "6px 0", color: "#333" }}>
+              The Mimic was <b>{SUSPECTS[res.mimicIdx].name}</b>
+              {res.youWereMimic ? " — that was YOU." : "."}
+            </div>
+            <div style={styles.verdictStats}>
+              {res.detectiveBonus > 0 && <span style={styles.bonusPill}>Detective +{res.detectiveBonus}</span>}
+              {res.getawayBonus > 0 && <span style={{ ...styles.bonusPill, background: "#191225", color: "#ff2e9a" }}>Getaway +{res.getawayBonus}</span>}
+              {res.youWereMimic && (
+                <span style={{ ...styles.bonusPill, background: res.mimicScore > 0 ? "#8a4cff" : "#999" }}>
+                  Sabotage score {res.mimicScore}{res.mimicScore === 0 ? " (no measurable sabotage = 0)" : ""}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        <button style={{ ...styles.play, marginTop: 14 }} onClick={onAgain}>PLAY AGAIN ▶</button>
+      </div>
+    </div>
+  );
+}
+
 function TauntButton() {
   const [cooling, setCooling] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -175,16 +281,31 @@ export function HUD() {
   const survivedFor = useGame((s) => s.survivedFor);
   const outcome = useGame((s) => s.outcome);
   const beingWatched = useGame((s) => s.beingWatched);
+  const mimicMode = useGame((s) => s.mimicMode);
+  const setMimicMode = useGame((s) => s.setMimicMode);
   const startPrep = useGame((s) => s.startPrep);
   const beginHunt = useGame((s) => s.beginHunt);
   const prevWatched = useRef(false);
 
-  const start = () => {
+  const startRound = () => {
     sfx.initAudio(); // unlock audio on this user gesture
     sfx.click();
     resetShared();
     startPrep();
   };
+  // Normal 1v1.
+  const start = () => {
+    setMimicMode(false);
+    exitMimicMode();
+    startRound();
+  };
+  // Mimic + Confessional Vote round (gated out of newbie/party queues).
+  const startMimic = () => {
+    setMimicMode(true);
+    startMimicRound();
+    startRound();
+  };
+  const again = () => (mimicMode ? startMimic() : start());
 
   const hunt = () => {
     sfx.click();
@@ -222,13 +343,22 @@ export function HUD() {
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
           </ul>
-          <button style={styles.play} onClick={start}>PLAY ▶</button>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <button style={styles.play} onClick={start}>PLAY ▶</button>
+            <button style={styles.mimicBtn} onClick={startMimic}>THE MIMIC 🎭</button>
+          </div>
+          <p style={styles.partyHint}>
+            The Mimic — one hider is secretly scored only by getting a teammate tagged.
+            Sabotage, survive the round, then vote in the Confessional. (Beta scaffold.)
+          </p>
         </div>
       </div>
     );
   }
 
   if (phase === "result") {
+    // Mimic round → resolve with the Confessional Vote card instead.
+    if (mimicMode) return <ConfessionalVote survived={outcome === "survived"} onAgain={again} />;
     const survived = outcome === "survived";
     return (
       <div style={styles.center}>
@@ -251,7 +381,7 @@ export function HUD() {
               <div style={styles.statLbl}>final camo</div>
             </div>
           </div>
-          <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
+          <button style={styles.play} onClick={again}>PLAY AGAIN ▶</button>
         </div>
       </div>
     );
@@ -274,6 +404,8 @@ export function HUD() {
         </div>
       </div>
 
+      {mimicMode && <MimicRoleChip />}
+
       <div style={styles.bottomLeft}>
         <CamoMeter />
         {isPrep && <PaintMeter />}
@@ -290,7 +422,10 @@ export function HUD() {
 
       {!isPrep && (
         <div style={styles.bottomCenter}>
-          <TauntButton />
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <TauntButton />
+            {mimicMode && mimic.youAreMimic && <SabotageControl />}
+          </div>
           <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
             Taunt to bait the Hunter — risky!
           </div>
@@ -412,6 +547,68 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
+  mimicBtn: {
+    marginTop: 16,
+    padding: "14px 26px",
+    fontSize: 17,
+    fontWeight: 800,
+    color: "#ff2e9a",
+    background: "#191225",
+    border: "none",
+    borderRadius: 16,
+    cursor: "pointer",
+    boxShadow: "0 6px 0 #000",
+    fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  partyHint: { fontSize: 12, color: "#666", marginTop: 10, lineHeight: 1.4 },
+  presetSwatch: { width: 14, height: 14, borderRadius: "50%", display: "inline-block", boxShadow: "inset 0 0 0 1px #0002" },
+  roleChip: {
+    position: "absolute",
+    top: 72,
+    left: "50%",
+    transform: "translateX(-50%)",
+    padding: "7px 18px",
+    borderRadius: 999,
+    fontWeight: 800,
+    fontSize: 13.5,
+    boxShadow: "0 4px 16px #0003",
+    pointerEvents: "none",
+    whiteSpace: "nowrap",
+  },
+  sabotage: {
+    padding: "16px 22px",
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#fff",
+    background: "#191225",
+    border: "2px solid #ff2e9a",
+    borderRadius: 16,
+    cursor: "pointer",
+    boxShadow: "0 5px 0 #000",
+    fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  sabotageMenu: {
+    position: "absolute",
+    bottom: "110%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "#fff",
+    borderRadius: 12,
+    padding: 8,
+    boxShadow: "0 8px 30px #0004",
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    minWidth: 130,
+  },
+  sabotageItem: { display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700, color: "#191225", background: "#f4f1ea", border: "none", borderRadius: 8, padding: "6px 10px", cursor: "pointer" },
+  evidence: { textAlign: "left", background: "#faf7f2", borderRadius: 12, padding: "10px 12px", maxHeight: 180, overflowY: "auto", margin: "8px 0" },
+  evidenceLine: { fontSize: 12.5, color: "#333", lineHeight: 1.7, fontVariantNumeric: "tabular-nums" },
+  voteRow: { display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" },
+  voteBtn: { display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 800, color: "#191225", background: "#eee9fb", border: "2px solid #0002", borderRadius: 10, padding: "8px 12px", cursor: "pointer" },
+  verdict: { margin: "10px 0" },
+  verdictStats: { display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 8 },
+  bonusPill: { fontSize: 12, fontWeight: 800, color: "#fff", background: "#1a9c4c", padding: "5px 10px", borderRadius: 999 },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },
   statNum: { fontSize: 32, fontWeight: 800, color: "#191225", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-baloo), system-ui, sans-serif" },
