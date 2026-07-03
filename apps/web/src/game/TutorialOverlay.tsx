@@ -13,6 +13,7 @@ import { CAMO_SAFE_THRESHOLD, FLOOR_COLOR } from "./constants";
 interface Step {
   title: string;
   prompt: string;
+  icon?: string;
   check: () => boolean;
 }
 
@@ -21,12 +22,14 @@ const SPAWN = { x: 0, z: 6 };
 const STEPS: Step[] = [
   {
     title: "Waddle",
+    icon: "/art/step-move.svg",
     prompt: "Use WASD / arrows to move. Waddle over toward a prop.",
     check: () =>
       Math.hypot(shared.playerPos.x - SPAWN.x, shared.playerPos.z - SPAWN.z) > 2.5,
   },
   {
     title: "Sample",
+    icon: "/art/step-sample.svg",
     prompt:
       "Stand against a prop so the 🎯 swatch lights up its color — then tap 🎯 to sample it.",
     check: () => {
@@ -36,21 +39,25 @@ const STEPS: Step[] = [
   },
   {
     title: "Paint",
+    icon: "/art/step-paint.svg",
     prompt: "Click + drag on your blob to spray that color. Cover a good patch!",
     check: () => useGame.getState().stamps.length >= 18,
   },
   {
     title: "Blend",
+    icon: "/art/step-blend.svg",
     prompt: "Keep painting until your CAMO meter crosses the line into ✓ blended.",
     check: () => useGame.getState().camoScore >= CAMO_SAFE_THRESHOLD,
   },
   {
     title: "Hunt",
+    icon: "/art/step-blend.svg",
     prompt: "You're camouflaged! Press START HUNT to wake the scout.",
     check: () => useGame.getState().phase === "hunt",
   },
   {
     title: "Hold still",
+    icon: "/art/step-hold.svg",
     prompt: "The scout is sweeping. Hold still and stay blended — let it walk past.",
     check: () => useGame.getState().survivedFor >= 12,
   },
@@ -80,7 +87,8 @@ export function TutorialOverlay() {
     return (
       <div style={styles.completeWrap}>
         <div style={styles.completeCard}>
-          <div style={{ fontSize: 40 }}>🎉</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/art/first-blob-mascot.svg" alt="" width={96} height={96} style={{ display: "block", margin: "0 auto" }} />
           <h2 style={styles.h2}>First Blob complete!</h2>
           <p style={styles.p}>
             You can move, sample, paint, blend, and sweat the Hunter. That&apos;s the
@@ -124,7 +132,13 @@ export function TutorialOverlay() {
           </span>
           <span style={styles.title}>FIRST BLOB · {STEPS[step].title}</span>
         </div>
-        <div style={styles.prompt}>{STEPS[step].prompt}</div>
+        <div style={styles.promptRow}>
+          {STEPS[step].icon && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={STEPS[step].icon} alt="" width={40} height={40} style={{ display: "block", flexShrink: 0 }} />
+          )}
+          <div style={styles.prompt}>{STEPS[step].prompt}</div>
+        </div>
         <div style={styles.dots}>
           {STEPS.map((_, i) => (
             <span
@@ -164,16 +178,20 @@ const styles: Record<string, React.CSSProperties> = {
   },
   card: {
     background: "#191225ee",
+    backgroundImage: "url(/art/tutorial-bubble.svg)",
+    backgroundSize: "100% 100%",
+    backgroundRepeat: "no-repeat",
     color: "#fff",
     borderRadius: 16,
-    padding: "12px 20px",
-    maxWidth: 440,
+    padding: "16px 26px 18px",
+    width: 440,
     textAlign: "center",
     boxShadow: "0 8px 30px #0004",
   },
   stepRow: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 4 },
   badge: { background: "#ff2e9a", color: "#fff", borderRadius: 999, padding: "1px 8px", fontSize: 12, fontWeight: 800 },
   title: { fontSize: 12, fontWeight: 800, letterSpacing: 1, opacity: 0.85, fontFamily: "var(--font-baloo), system-ui, sans-serif" },
+  promptRow: { display: "flex", alignItems: "center", gap: 12, justifyContent: "center", textAlign: "left" },
   prompt: { fontSize: 16, fontWeight: 700, lineHeight: 1.35 },
   dots: { display: "flex", gap: 6, justifyContent: "center", marginTop: 8 },
   dot: { width: 8, height: 8, borderRadius: 999, display: "inline-block" },
