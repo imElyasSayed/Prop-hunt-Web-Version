@@ -222,7 +222,11 @@ export function HUD() {
             <li><b>🎯 sample</b> a prop&apos;s exact color, then paint to match it</li>
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
-            <li>🛰 The Hunter fires a <b>sonar Pulse</b> — hear the charge, duck behind a prop to break its line of sight</li>
+            <li style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/art/pulse-sonar.svg" alt="" width={18} height={18} style={{ display: "block", flexShrink: 0 }} />
+              <span>The Hunter fires a <b>sonar Pulse</b> — hear the charge, duck behind a prop to break its line of sight</span>
+            </li>
           </ul>
           <button style={styles.play} onClick={start}>PLAY ▶</button>
         </div>
@@ -271,7 +275,11 @@ export function HUD() {
         <div style={styles.timer}>{fmt(time)}</div>
         <div style={{ width: 220, textAlign: "right" }}>
           {!isPrep && pinged ? (
-            <span style={styles.ping}>🛰 PINGED — you&apos;re lit!</span>
+            <span style={{ ...styles.ping, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/art/pulse-pinged.svg" alt="" width={16} height={16} style={{ display: "block" }} />
+              PINGED — you&apos;re lit!
+            </span>
           ) : (
             !isPrep &&
             beingWatched && <span style={styles.watch}>👁 SPOTTED — HOLD STILL</span>
