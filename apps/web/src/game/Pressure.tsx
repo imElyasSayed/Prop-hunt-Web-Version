@@ -8,9 +8,27 @@
 // Logic writes scalar flags to `shared` (read by the Hunter) and a throttled
 // snapshot to the store (read by the HUD). Runs only during the hunt.
 "use client";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+
+// SVG → CanvasTexture loader for the asset-pack ground art.
+function loadSvgTexture(url: string, size = 256): Promise<THREE.Texture> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = size;
+      c.height = size;
+      c.getContext("2d")!.drawImage(img, 0, 0, size, size);
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      resolve(t);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
 import { useGame } from "./store";
 import { shared } from "./shared";
 import * as sfx from "./sound";
@@ -99,6 +117,28 @@ export function Pressure() {
       redline: base("#ff2e4f", 0.28, false),
     };
   }, []);
+
+  // Wire the asset-pack ground art onto the materials (cosmetic; the flat-color
+  // fallback still works if a texture fails to load).
+  useEffect(() => {
+    let alive = true;
+    const put = (m: THREE.MeshBasicMaterial, url: string) =>
+      loadSvgTexture(url)
+        .then((t) => {
+          if (!alive) return;
+          m.map = t;
+          m.color.set("#ffffff");
+          m.needsUpdate = true;
+        })
+        .catch(() => {});
+    put(mats.disc, "/art/safezone-ring.svg");
+    put(mats.tele, "/art/safezone-telegraph.svg");
+    put(mats.purge, "/art/purge-ring.svg");
+    put(mats.redline, "/art/redline-tile.svg");
+    return () => {
+      alive = false;
+    };
+  }, [mats]);
 
   const hideAll = () => {
     [safeRing, safeDisc, teleRing, purgeRing, ghost].forEach(
@@ -212,12 +252,11 @@ export function Pressure() {
     // --- visuals ---
     const pulse = 0.5 + 0.5 * Math.sin(now * 4);
     if (safeRing.current && safeDisc.current) {
-      safeRing.current.visible = true;
+      // the textured disc carries the whole sanctuary-ring art
+      safeRing.current.visible = false;
       safeDisc.current.visible = true;
-      safeRing.current.position.set(s.x, 0.05, s.z);
-      safeDisc.current.position.set(s.x, 0.04, s.z);
-      mats.ring.opacity = inSafe ? 0.85 : 0.55;
-      mats.disc.opacity = 0.08 + (inSafe ? 0.06 : 0);
+      safeDisc.current.position.set(s.x, 0.05, s.z);
+      mats.disc.opacity = inSafe ? 1 : 0.82;
     }
     if (teleRing.current) {
       teleRing.current.visible = s.telegraph;
@@ -257,7 +296,7 @@ export function Pressure() {
         m.visible = false;
       }
     });
-    mats.redline.opacity = 0.18 + 0.14 * pulse;
+    mats.redline.opacity = 0.55 + 0.2 * pulse;
 
     // --- throttled HUD snapshot ---
     throttle.current += dt;
@@ -276,17 +315,18 @@ export function Pressure() {
 
   return (
     <group>
+      {/* textured ground planes carry the asset-pack ring art */}
       <mesh ref={safeDisc} rotation={[-Math.PI / 2, 0, 0]} material={mats.disc} visible={false}>
-        <circleGeometry args={[SAFE_ZONE_RADIUS, 48]} />
+        <planeGeometry args={[SAFE_ZONE_RADIUS * 2, SAFE_ZONE_RADIUS * 2]} />
       </mesh>
       <mesh ref={safeRing} rotation={[-Math.PI / 2, 0, 0]} material={mats.ring} visible={false}>
         <ringGeometry args={[SAFE_ZONE_RADIUS - 0.18, SAFE_ZONE_RADIUS, 48]} />
       </mesh>
       <mesh ref={teleRing} rotation={[-Math.PI / 2, 0, 0]} material={mats.tele} visible={false}>
-        <ringGeometry args={[SAFE_ZONE_RADIUS - 0.18, SAFE_ZONE_RADIUS, 48]} />
+        <planeGeometry args={[SAFE_ZONE_RADIUS * 2, SAFE_ZONE_RADIUS * 2]} />
       </mesh>
       <mesh ref={purgeRing} rotation={[-Math.PI / 2, 0, 0]} material={mats.purge} visible={false}>
-        <ringGeometry args={[PURGE_RADIUS - 0.25, PURGE_RADIUS, 48]} />
+        <planeGeometry args={[PURGE_RADIUS * 2, PURGE_RADIUS * 2]} />
       </mesh>
       <mesh ref={ghost} material={mats.ghost} visible={false}>
         <sphereGeometry args={[0.62, 20, 16]} />
