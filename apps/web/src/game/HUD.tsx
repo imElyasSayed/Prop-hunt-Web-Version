@@ -159,7 +159,9 @@ function MimicRoleChip() {
   const you = mimic.youAreMimic;
   return (
     <div style={{ ...styles.roleChip, background: you ? "#191225" : "#0fd4e6", color: you ? "#ff2e9a" : "#191225" }}>
-      {you ? "🎭 YOU ARE THE MIMIC — get a teammate tagged" : "🫧 HONEST HIDER — just survive"}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {you && <img src="/art/mimic-mask.svg" alt="" style={{ width: 18, height: 18, verticalAlign: "-4px", marginRight: 5 }} />}
+      {you ? "YOU ARE THE MIMIC — get a teammate tagged" : "🫧 HONEST HIDER — just survive"}
     </div>
   );
 }
@@ -184,7 +186,8 @@ function SabotageControl() {
           <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, opacity: 0.7 }}>Aim at a teammate:</div>
           {SUSPECTS.filter((s) => s.idx !== 0).map((s) => (
             <button key={s.idx} style={styles.sabotageItem} onClick={() => bait(s.idx)}>
-              <span style={{ ...styles.presetSwatch, background: s.color }} /> {s.name}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={s.art} alt="" style={{ width: 20, height: 20 }} /> {s.name}
             </button>
           ))}
         </div>
@@ -201,12 +204,28 @@ function ConfessionalVote({ survived, onAgain }: { survived: boolean; onAgain: (
   return (
     <div style={styles.center}>
       <div style={{ ...styles.card, maxWidth: 520, borderColor: "#8a4cff" }}>
-        <h1 style={{ ...styles.logo, fontSize: 34 }}>CONFESSIONAL 🎭</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/art/conf-header.svg" alt="Confessional" style={{ width: "100%", maxWidth: 380, height: "auto", margin: "0 auto 4px", display: "block" }} />
         <p style={styles.tag}>Who was the Mimic?</p>
 
         <div style={styles.evidence}>
           {evidence.map((line, i) => (
-            <div key={i} style={styles.evidenceLine}>{line}</div>
+            <div key={i} style={styles.evidenceLine}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  line.kind === "sabotage"
+                    ? "/art/evidence-sabotage.svg"
+                    : line.kind === "empty"
+                      ? "/art/evidence-empty.svg"
+                      : "/art/evidence-redacted.svg"
+                }
+                alt=""
+                style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1 }}
+              />
+              {line.t && <b style={{ fontVariantNumeric: "tabular-nums", opacity: 0.7 }}>{line.t}</b>}
+              <span>{line.text}</span>
+            </div>
           ))}
         </div>
 
@@ -218,7 +237,8 @@ function ConfessionalVote({ survived, onAgain }: { survived: boolean; onAgain: (
             <div style={styles.voteRow}>
               {SUSPECTS.map((s) => (
                 <button key={s.idx} style={styles.voteBtn} onClick={() => { sfx.click(); setPicked(s.idx); }}>
-                  <span style={{ ...styles.presetSwatch, background: s.color, width: 18, height: 18 }} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={s.art} alt="" style={{ width: 26, height: 26 }} />
                   {s.name}
                 </button>
               ))}
@@ -229,8 +249,11 @@ function ConfessionalVote({ survived, onAgain }: { survived: boolean; onAgain: (
             <div style={{ fontSize: 18, fontWeight: 800, color: res.detective ? "#1a9c4c" : "#d23", fontFamily: "var(--font-baloo), system-ui" }}>
               {res.detective ? "🕵️ Correct! Detective bonus" : "🫥 Wrong — the Mimic slips away"}
             </div>
-            <div style={{ fontSize: 13, margin: "6px 0", color: "#333" }}>
-              The Mimic was <b>{SUSPECTS[res.mimicIdx].name}</b>
+            <div style={{ fontSize: 13, margin: "6px 0", color: "#333", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              The Mimic was
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={SUSPECTS[res.mimicIdx].art} alt="" style={{ width: 26, height: 26 }} />
+              <b>{SUSPECTS[res.mimicIdx].name}</b>
               {res.youWereMimic ? " — that was YOU." : "."}
             </div>
             <div style={styles.verdictStats}>
@@ -345,7 +368,10 @@ export function HUD() {
           </ul>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <button style={styles.play} onClick={start}>PLAY ▶</button>
-            <button style={styles.mimicBtn} onClick={startMimic}>THE MIMIC 🎭</button>
+            <button style={{ ...styles.mimicBtn, display: "inline-flex", alignItems: "center", gap: 8 }} onClick={startMimic}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/art/mimic-mask.svg" alt="" style={{ width: 22, height: 22 }} /> THE MIMIC
+            </button>
           </div>
           <p style={styles.partyHint}>
             The Mimic — one hider is secretly scored only by getting a teammate tagged.
@@ -603,7 +629,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sabotageItem: { display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700, color: "#191225", background: "#f4f1ea", border: "none", borderRadius: 8, padding: "6px 10px", cursor: "pointer" },
   evidence: { textAlign: "left", background: "#faf7f2", borderRadius: 12, padding: "10px 12px", maxHeight: 180, overflowY: "auto", margin: "8px 0" },
-  evidenceLine: { fontSize: 12.5, color: "#333", lineHeight: 1.7, fontVariantNumeric: "tabular-nums" },
+  evidenceLine: { fontSize: 12.5, color: "#333", lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 6, padding: "3px 0" },
   voteRow: { display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" },
   voteBtn: { display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 800, color: "#191225", background: "#eee9fb", border: "2px solid #0002", borderRadius: 10, padding: "8px 12px", cursor: "pointer" },
   verdict: { margin: "10px 0" },
