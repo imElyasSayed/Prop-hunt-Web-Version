@@ -7,6 +7,7 @@ import { Suspense, useRef } from "react";
 import { Room } from "./Room";
 import { Player } from "./Player";
 import { Hunter } from "./Hunter";
+import { DeadMansTell } from "./DeadMansTell";
 import { AmbientDecals, EliminationSplat } from "./Decals";
 import { useKeys } from "./useKeys";
 import { useGame } from "./store";
@@ -71,6 +72,7 @@ export function Scene() {
         <EliminationSplat />
         <Player keys={keys} />
         <Hunter />
+        <DeadMansTell />
       </Suspense>
     </Canvas>
   );

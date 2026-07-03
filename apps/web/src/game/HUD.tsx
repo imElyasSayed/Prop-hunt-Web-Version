@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import { resetDistress } from "./distress";
 import * as sfx from "./sound";
 import {
   PALETTE,
@@ -183,6 +184,7 @@ export function HUD() {
     sfx.initAudio(); // unlock audio on this user gesture
     sfx.click();
     resetShared();
+    resetDistress();
     startPrep();
   };
 
@@ -251,6 +253,13 @@ export function HUD() {
               <div style={styles.statLbl}>final camo</div>
             </div>
           </div>
+          {!survived && (
+            <div style={styles.tellLine}>
+              ⚑ Your <b>Dead Man&apos;s Tell</b> flared — a distress pulse rang out and a
+              20s grave stain marks the spot. In a squad, living partners who outlast it
+              bank a <b>Sole Survivor</b> bonus.
+            </div>
+          )}
           <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
         </div>
       </div>
@@ -412,6 +421,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 5px 0 #d4a800",
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
+  tellLine: { fontSize: 12.5, lineHeight: 1.45, color: "#a33", background: "#fff0f2", borderRadius: 10, padding: "8px 10px", margin: "4px 0 8px" },
   statRow: { display: "flex", gap: 24, justifyContent: "center", margin: "16px 0" },
   stat: { textAlign: "center" },
   statNum: { fontSize: 32, fontWeight: 800, color: "#191225", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-baloo), system-ui, sans-serif" },

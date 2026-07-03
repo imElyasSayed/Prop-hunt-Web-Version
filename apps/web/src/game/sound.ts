@@ -143,6 +143,29 @@ export function win() {
   });
 }
 
+/** Soft distress pulse when a hider is tagged — a gentle repeating throb (~4s),
+ * the "Dead Man's Tell" audible to living hiders. */
+export function distressPulse() {
+  const c = ac();
+  if (!c) return;
+  // four soft descending throbs over ~4s
+  for (let i = 0; i < 4; i++) {
+    const at = c.currentTime + i * 1.0;
+    const o = c.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(300, at);
+    o.frequency.exponentialRampToValueAtTime(150, at + 0.5);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, at);
+    g.gain.linearRampToValueAtTime(0.16, at + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.6);
+    o.connect(g);
+    if (master) g.connect(master);
+    o.start(at);
+    o.stop(at + 0.65);
+  }
+}
+
 /** Soft UI click. */
 export function click() {
   const c = ac();
