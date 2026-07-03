@@ -139,7 +139,9 @@ function PresetBar() {
 
   return (
     <div style={styles.presetBar}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: "#8a4cff", marginBottom: 6 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: "#8a4cff", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/art/become-couch.svg" alt="" style={{ width: 18, height: 18 }} />
         CAMO PRESETS — one-tap “become the couch” ({presets.length}/{FREE_PRESET_SLOTS} free)
       </div>
       <div style={styles.presetRow}>
@@ -152,7 +154,11 @@ function PresetBar() {
             <button onClick={() => remove(p.id)} title="Delete" style={styles.presetDel}>✕</button>
           </div>
         ))}
-        {!presets.length && <span style={{ fontSize: 11, opacity: 0.55 }}>No saved loadouts yet.</span>}
+        {/* empty-slot art fills the remaining free slots */}
+        {Array.from({ length: Math.max(0, FREE_PRESET_SLOTS - presets.length) }).map((_, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={`slot-${i}`} src="/art/preset-slot.svg" alt="empty slot" style={{ width: 30, height: 30, opacity: 0.6 }} />
+        ))}
       </div>
       <div style={styles.presetSaveRow}>
         <input
@@ -163,8 +169,9 @@ function PresetBar() {
           maxLength={16}
           style={styles.presetInput}
         />
-        <button onClick={save} disabled={!stamps.length || full} style={{ ...styles.presetSave, opacity: !stamps.length || full ? 0.45 : 1 }}>
-          💾 SAVE
+        <button onClick={save} disabled={!stamps.length || full} style={{ ...styles.presetSave, display: "flex", alignItems: "center", gap: 4, opacity: !stamps.length || full ? 0.45 : 1 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/art/preset-save.svg" alt="" style={{ width: 15, height: 15 }} /> SAVE
         </button>
       </div>
     </div>
