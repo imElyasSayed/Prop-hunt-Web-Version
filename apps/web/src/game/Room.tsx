@@ -3,9 +3,11 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import type { PropDef } from "./types";
-import { PROPS, ROOM_HALF, WALL_HEIGHT, FLOOR_COLOR, WALL_COLOR } from "./constants";
+import { ROOM_HALF, WALL_HEIGHT, FLOOR_COLOR, WALL_COLOR } from "./constants";
 import { useModel } from "./models";
 import { makePaperGrain } from "./surfaces";
+import { activeProps } from "./party";
+import { useGame } from "./store";
 
 function Prop({ prop }: { prop: PropDef }) {
   const obj = useModel(prop.model);
@@ -53,9 +55,21 @@ export function Room() {
         </mesh>
       ))}
 
-      {PROPS.map((p) => (
+      <PropSet />
+    </group>
+  );
+}
+
+// The active prop set — re-reads when the game mode changes (Prop Party swaps
+// in a denser layout).
+function PropSet() {
+  // subscribe so switching to/from Prop Party re-renders the props
+  useGame((s) => s.mode);
+  return (
+    <>
+      {activeProps().map((p) => (
         <Prop key={p.id} prop={p} />
       ))}
-    </group>
+    </>
   );
 }

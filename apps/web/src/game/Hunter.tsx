@@ -10,13 +10,13 @@ import { useModel } from "./models";
 import { shared } from "./shared";
 import { scoreCamo } from "./camo";
 import { collide } from "./collision";
+import { camoThreshold } from "./party";
 import {
   HUNTER_SPEED,
   HUNTER_VIEW_RANGE,
   HUNTER_FOV_DOT,
   HUNTER_TAG_RANGE,
   HUNTER_SUSPICION_TO_TAG,
-  CAMO_SAFE_THRESHOLD,
 } from "./constants";
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -70,7 +70,8 @@ export function Hunter() {
       shared.coverage,
       shared.nearestSurfaceColor,
     );
-    const detectable = camo < CAMO_SAFE_THRESHOLD || shared.taunting;
+    const threshold = camoThreshold(); // Prop Party is more forgiving
+    const detectable = camo < threshold || shared.taunting;
     const watched = inCone && detectable;
 
     setWatched(watched);
@@ -79,7 +80,7 @@ export function Hunter() {
     if (watched) {
       const mismatch = shared.taunting
         ? 1
-        : Math.max(0.15, (CAMO_SAFE_THRESHOLD - camo) / CAMO_SAFE_THRESHOLD);
+        : Math.max(0.15, (threshold - camo) / threshold);
       suspicion.current = Math.min(
         1,
         suspicion.current + (mismatch * dt) / HUNTER_SUSPICION_TO_TAG,

@@ -4,6 +4,7 @@
 import { create } from "zustand";
 import type { GamePhase, RoundOutcome, Stamp } from "./types";
 import { PAINT_BUDGET, PALETTE, PREP_SECONDS } from "./constants";
+import { party, pickModifier } from "./party";
 
 interface GameState {
   phase: GamePhase;
@@ -21,8 +22,15 @@ interface GameState {
   surfaceColor: string;
   /** True while the hunter currently has the player in its suspicion cone. */
   beingWatched: boolean;
+  /** Game mode: normal 1v1 or the low-stakes Prop Party playlist. */
+  mode: "normal" | "party";
+  /** Active Prop Party modifier id (empty in normal mode). */
+  partyModifier: string;
+  /** Party round counter (drives modifier rotation). */
+  partyRound: number;
 
   // ---- actions ----
+  setPartyMode: (on: boolean) => void;
   startPrep: () => void;
   beginHunt: () => void;
   tick: (dt: number) => void;
@@ -52,6 +60,21 @@ export const useGame = create<GameState>((set, get) => ({
   camoScore: 0,
   surfaceColor: "#e4ddcd",
   beingWatched: false,
+  mode: "normal",
+  partyModifier: "",
+  partyRound: 0,
+
+  // Toggle the Prop Party playlist. Picks the round's silly modifier and syncs
+  // the module-level `party.active` flag that frame loops read.
+  setPartyMode: (on) => {
+    party.active = on;
+    if (on) {
+      const round = get().partyRound + 1; // rotate the modifier each party round
+      set({ mode: "party", partyModifier: pickModifier(round).id, partyRound: round });
+    } else {
+      set({ mode: "normal", partyModifier: "" });
+    }
+  },
 
   startPrep: () => {
     seqCounter = 0;

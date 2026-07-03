@@ -4,12 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "./store";
 import { shared } from "./shared";
 import { resetShared } from "./shared";
+import {
+  huntSeconds,
+  camoThreshold,
+  PARTY_MODIFIERS,
+  PARTY_WHISTLE_INTERVAL,
+  bumpPartyProgress,
+  partyProgress,
+  partyLevel,
+} from "./party";
 import * as sfx from "./sound";
 import {
   PALETTE,
   PAINT_BUDGET,
   HUNT_SECONDS,
-  CAMO_SAFE_THRESHOLD,
 } from "./constants";
 
 function fmt(t: number) {
@@ -108,8 +116,9 @@ function PalettePicker() {
 
 function CamoMeter() {
   const camo = useGame((s) => s.camoScore);
+  const threshold = camoThreshold(); // Prop Party lowers the bar
   const pct = Math.round(camo * 100);
-  const good = camo >= CAMO_SAFE_THRESHOLD;
+  const good = camo >= threshold;
   return (
     <div style={styles.camoWrap}>
       <div style={styles.camoLabel}>
@@ -124,7 +133,7 @@ function CamoMeter() {
             background: good ? "#2fce6a" : "#ff5b5b",
           }}
         />
-        <div style={{ ...styles.camoThreshold, left: `${CAMO_SAFE_THRESHOLD * 100}%` }} />
+        <div style={{ ...styles.camoThreshold, left: `${threshold * 100}%` }} />
       </div>
     </div>
   );
@@ -141,6 +150,18 @@ function PaintMeter() {
       <div style={styles.paintTrack}>
         <div style={{ ...styles.paintFill, width: `${pct}%` }} />
       </div>
+    </div>
+  );
+}
+
+// Shows the round's silly Prop Party modifier.
+function PartyModifierBanner({ modifier }: { modifier: string }) {
+  const mod = PARTY_MODIFIERS.find((m) => m.id === modifier);
+  if (!mod) return null;
+  return (
+    <div style={styles.partyBanner}>
+      <b style={{ fontSize: 15 }}>{mod.emoji} {mod.name}</b>
+      <span style={{ fontSize: 12, opacity: 0.85 }}>{mod.blurb}</span>
     </div>
   );
 }
@@ -175,34 +196,56 @@ export function HUD() {
   const survivedFor = useGame((s) => s.survivedFor);
   const outcome = useGame((s) => s.outcome);
   const beingWatched = useGame((s) => s.beingWatched);
+  const mode = useGame((s) => s.mode);
+  const setPartyMode = useGame((s) => s.setPartyMode);
   const startPrep = useGame((s) => s.startPrep);
   const beginHunt = useGame((s) => s.beginHunt);
   const prevWatched = useRef(false);
 
-  const start = () => {
+  const startRound = () => {
     sfx.initAudio(); // unlock audio on this user gesture
     sfx.click();
     resetShared();
     startPrep();
   };
+  // Normal 1v1.
+  const start = () => {
+    setPartyMode(false);
+    startRound();
+  };
+  // Prop Party (rotates the modifier each round).
+  const startParty = () => {
+    setPartyMode(true);
+    startRound();
+  };
+  // PLAY AGAIN keeps whatever mode you're in.
+  const again = () => (mode === "party" ? startParty() : start());
 
   const hunt = () => {
     sfx.click();
     beginHunt();
   };
 
-  // result stings
+  // result stings + party progress
   useEffect(() => {
     if (phase !== "result") return;
     if (outcome === "splatted") sfx.splat();
     else if (outcome === "survived") sfx.win();
-  }, [phase, outcome]);
+    if (mode === "party" && outcome) bumpPartyProgress(outcome === "survived");
+  }, [phase, outcome, mode]);
 
   // alert blip the moment the Hunter first spots you
   useEffect(() => {
     if (phase === "hunt" && beingWatched && !prevWatched.current) sfx.spotted();
     prevWatched.current = beingWatched;
   }, [beingWatched, phase]);
+
+  // Prop Party: frequent ambient whistles for that chaotic party vibe.
+  useEffect(() => {
+    if (phase !== "hunt" || mode !== "party") return;
+    const id = setInterval(() => sfx.whistle(), PARTY_WHISTLE_INTERVAL * 1000);
+    return () => clearInterval(id);
+  }, [phase, mode]);
 
   if (phase === "menu") {
     return (
@@ -222,7 +265,14 @@ export function HUD() {
             <li><b>Q / E</b> — spin your blob while painting</li>
             <li><b>Click + drag on your blob</b> — spray paint (no undo!)</li>
           </ul>
-          <button style={styles.play} onClick={start}>PLAY ▶</button>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <button style={styles.play} onClick={start}>PLAY ▶</button>
+            <button style={styles.party} onClick={startParty}>PROP PARTY 🎉</button>
+          </div>
+          <p style={styles.partyHint}>
+            Prop Party — prop-dense map, short rounds, a silly modifier each round,
+            forgiving camo. Vibes only (Level {partyLevel(partyProgress())}).
+          </p>
         </div>
       </div>
     );
@@ -251,7 +301,10 @@ export function HUD() {
               <div style={styles.statLbl}>final camo</div>
             </div>
           </div>
-          <button style={styles.play} onClick={start}>PLAY AGAIN ▶</button>
+          {mode === "party" && (
+            <p style={styles.partyHint}>🎉 Prop Party · Level {partyLevel(partyProgress())} · {partyProgress().rounds} rounds played</p>
+          )}
+          <button style={styles.play} onClick={again}>PLAY AGAIN ▶</button>
         </div>
       </div>
     );
@@ -259,7 +312,7 @@ export function HUD() {
 
   // prep or hunt
   const isPrep = phase === "prep";
-  const time = isPrep ? timeLeft : HUNT_SECONDS - survivedFor;
+  const time = isPrep ? timeLeft : huntSeconds() - survivedFor;
   return (
     <>
       <div style={styles.topBar}>
@@ -273,6 +326,8 @@ export function HUD() {
           )}
         </div>
       </div>
+
+      {mode === "party" && <PartyModifierBanner modifier={useGame.getState().partyModifier} />}
 
       <div style={styles.bottomLeft}>
         <CamoMeter />
@@ -366,6 +421,35 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "var(--font-baloo), system-ui, sans-serif",
   },
   watch: { color: "#fff", background: "#ff2e4f", padding: "6px 12px", borderRadius: 999, fontWeight: 800, fontSize: 13 },
+  party: {
+    marginTop: 16,
+    padding: "14px 28px",
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#191225",
+    background: "#b4f531",
+    border: "none",
+    borderRadius: 16,
+    cursor: "pointer",
+    boxShadow: "0 6px 0 #8bbf1e",
+    fontFamily: "var(--font-baloo), system-ui, sans-serif",
+  },
+  partyHint: { fontSize: 12, color: "#666", marginTop: 10, lineHeight: 1.4 },
+  partyBanner: {
+    position: "absolute",
+    top: 72,
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    background: "#191225",
+    color: "#b4f531",
+    padding: "6px 18px",
+    borderRadius: 14,
+    boxShadow: "0 4px 16px #0003",
+    pointerEvents: "none",
+  },
   bottomLeft: { position: "absolute", left: 20, bottom: 20, display: "flex", flexDirection: "column", gap: 12 },
   bottomCenter: {
     position: "absolute",

@@ -1,12 +1,13 @@
 // Shared circle-vs-props + room-bounds collision. Used by both the player and
 // the Hunter so neither can walk through props or walls.
-import { ROOM_HALF, PROPS } from "./constants";
+import { ROOM_HALF } from "./constants";
+import { activeProps } from "./party";
 
 export function collide(x: number, z: number, radius: number): [number, number] {
   const lim = ROOM_HALF - radius - 0.1;
   x = Math.max(-lim, Math.min(lim, x));
   z = Math.max(-lim, Math.min(lim, z));
-  for (const p of PROPS) {
+  for (const p of activeProps()) {
     const hx = p.size[0] / 2 + radius;
     const hz = p.size[2] / 2 + radius;
     const dx = x - p.position[0];

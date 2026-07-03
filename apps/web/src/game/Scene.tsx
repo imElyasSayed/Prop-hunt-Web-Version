@@ -11,7 +11,7 @@ import { AmbientDecals, EliminationSplat } from "./Decals";
 import { useKeys } from "./useKeys";
 import { useGame } from "./store";
 import { shared } from "./shared";
-import { HUNT_SECONDS } from "./constants";
+import { huntSeconds } from "./party";
 
 function CameraRig() {
   const { camera } = useThree();
@@ -34,7 +34,7 @@ function GameClock() {
     const d = Math.min(dt, 0.05);
     tick(d);
     const s = useGame.getState();
-    if (s.phase === "hunt" && s.survivedFor >= HUNT_SECONDS) {
+    if (s.phase === "hunt" && s.survivedFor >= huntSeconds()) {
       survive();
     }
   });

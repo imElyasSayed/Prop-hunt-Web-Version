@@ -27,6 +27,7 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
   const addStamp = useGame((s) => s.addStamp);
   const setCamoScore = useGame((s) => s.setCamoScore);
   const setSurfaceColor = useGame((s) => s.setSurfaceColor);
+  const modifier = useGame((s) => s.partyModifier); // Prop Party silly modifier
 
   const { texture, getDominant } = usePaintTexture(stamps);
 
@@ -37,6 +38,8 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
       map: texture,
       color: 0xffffff,
       roughness: 0.6,
+      emissive: new THREE.Color("#000000"),
+      emissiveIntensity: 0,
     });
     return m;
   }, [texture]);
@@ -72,6 +75,9 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
     if (!g) return;
     const k = keys.current;
 
+    // Prop Party modifiers (cosmetic + light speed tweaks).
+    const speedMult = modifier === "turbo" ? 1.4 : modifier === "floaty" ? 1.15 : 1;
+
     // --- movement (world-axis, camera looks down -Z) ---
     if (phase === "prep" || phase === "hunt") {
       let mx = 0;
@@ -82,8 +88,8 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
       if (k.right) mx += 1;
       if (mx || mz) {
         const len = Math.hypot(mx, mz);
-        const nx = g.position.x + (mx / len) * PLAYER_SPEED * dt;
-        const nz = g.position.z + (mz / len) * PLAYER_SPEED * dt;
+        const nx = g.position.x + (mx / len) * PLAYER_SPEED * speedMult * dt;
+        const nz = g.position.z + (mz / len) * PLAYER_SPEED * speedMult * dt;
         const [cx, cz] = collide(nx, nz, PLAYER_RADIUS);
         g.position.x = cx;
         g.position.z = cz;
@@ -95,6 +101,23 @@ export function Player({ keys }: { keys: RefObject<Keys> }) {
     if (blob.current && phase === "prep") {
       if (k.spinL) blob.current.rotation.y += dt * 2.2;
       if (k.spinR) blob.current.rotation.y -= dt * 2.2;
+    }
+
+    // --- Prop Party cosmetic modifiers on the blob mesh (never affect camo) ---
+    if (blob.current) {
+      const t = state.clock.elapsedTime;
+      const scale = modifier === "bighead" ? 1.4 : 1;
+      blob.current.scale.setScalar(scale);
+      let bob = 0;
+      if (modifier === "bouncy") bob = Math.abs(Math.sin(t * 6)) * 0.35;
+      else if (modifier === "floaty") bob = Math.sin(t * 2) * 0.18 + 0.1;
+      blob.current.position.y = bob;
+      if (modifier === "disco") {
+        paintMat.emissive.setHSL((t * 0.4) % 1, 0.9, 0.5);
+        paintMat.emissiveIntensity = 0.4 + 0.3 * Math.sin(t * 8);
+      } else {
+        paintMat.emissiveIntensity = 0;
+      }
     }
 
     // --- camo scoring (throttled push to store for the HUD) ---

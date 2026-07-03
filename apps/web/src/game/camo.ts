@@ -1,8 +1,9 @@
 // Determines which surface the player is "backed against" and how well the
 // avatar's dominant color blends into it.
 import * as THREE from "three";
-import { PROPS, FLOOR_COLOR } from "./constants";
+import { FLOOR_COLOR } from "./constants";
 import { colorMatch, averageHex } from "./color";
+import { activeProps } from "./party";
 
 const tmp = new THREE.Vector3();
 
@@ -10,7 +11,7 @@ const tmp = new THREE.Vector3();
 export function nearestSurfaceColor(pos: THREE.Vector3): string {
   let best: string = FLOOR_COLOR;
   let bestDist = 3.6; // must be reasonably close to "back against" a prop
-  for (const p of PROPS) {
+  for (const p of activeProps()) {
     // horizontal distance to prop centre, minus half its footprint
     const dx = Math.abs(pos.x - p.position[0]) - p.size[0] / 2;
     const dz = Math.abs(pos.z - p.position[2]) - p.size[2] / 2;
