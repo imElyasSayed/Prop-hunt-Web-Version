@@ -7,7 +7,7 @@ import { Suspense, useRef } from "react";
 import { Room } from "./Room";
 import { Player } from "./Player";
 import { Hunter } from "./Hunter";
-import { DecoyShed } from "./DecoyShed";
+import { DecoyShed, DecoyPop } from "./DecoyShed";
 import { AmbientDecals, EliminationSplat } from "./Decals";
 import { useKeys } from "./useKeys";
 import { useGame } from "./store";
@@ -73,6 +73,7 @@ export function Scene() {
         <Player keys={keys} />
         <Hunter />
         <DecoyShed />
+        <DecoyPop />
       </Suspense>
     </Canvas>
   );
